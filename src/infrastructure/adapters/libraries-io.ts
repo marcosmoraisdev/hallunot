@@ -47,7 +47,7 @@ export async function fetchPlatforms(): Promise<LibrariesIoPlatform[]> {
   const searchParams = new URLSearchParams({ api_key: key })
   const url = `${BASE_URL}/platforms?${searchParams.toString()}`
 
-  const res = await fetch(url, { next: { revalidate: 86400 } })
+  const res = await fetch(url, { next: { revalidate: 86400 } }) // 1 day
 
   if (!res.ok) {
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
@@ -69,7 +69,7 @@ export async function searchLibraries(
 
   const url = `${BASE_URL}/search?${searchParams.toString()}`
 
-  const res = await fetch(url, { next: { revalidate: 300 } })
+  const res = await fetch(url, { next: { revalidate: 300 } }) // 5 minutes
 
   if (!res.ok) {
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)

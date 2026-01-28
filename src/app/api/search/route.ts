@@ -7,9 +7,9 @@ export async function GET(request: Request) {
 
     const q = searchParams.get("q")?.trim()
     const platforms = searchParams.get("platforms") ?? undefined
-    const page = parseInt(searchParams.get("page") ?? "1")
-    const perPage = parseInt(searchParams.get("per_page") ?? "10")
-    const sort = searchParams.get("sort") ?? "rank"
+    const page = parseInt(searchParams.get("page") ?? "0")
+    const perPage = parseInt(searchParams.get("per_page") ?? "9")
+    const sort = searchParams.get("sort") ?? "stars"
 
     if (!q) {
       return NextResponse.json(
@@ -18,9 +18,9 @@ export async function GET(request: Request) {
       )
     }
 
-    if (page < 1 || !Number.isInteger(page)) {
+    if (page < 0 || !Number.isInteger(page)) {
       return NextResponse.json(
-        { error: "page must be a positive integer" },
+        { error: "page must be a non-negative integer" },
         { status: 400 }
       )
     }
