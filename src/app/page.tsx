@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Github, Linkedin } from "lucide-react"
+import { Github, Linkedin, SearchX, DatabaseZap } from "lucide-react"
 import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { SectionHeader } from "@/components/section-header"
-import { LlmList } from "@/components/llm-list"
-import { LibraryList } from "@/components/library-list"
+import { UnifiedSearchBar } from "@/components/unified-search-bar"
+import { SearchResults } from "@/components/search-results"
+import type { SearchResultItem } from "@/components/search-results"
 import { VersionScores } from "@/components/version-scores"
 import { Disclaimer } from "@/components/disclaimer"
+import { EmptyState } from "@/components/empty-state"
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },
@@ -18,8 +20,63 @@ const sectionVariants = {
 }
 
 export default function Home() {
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
   const [selectedLlmId, setSelectedLlmId] = useState<string>()
-  const [selectedLibraryId, setSelectedLibraryId] = useState<string>()
+  const [selectedLibraryName, setSelectedLibraryName] = useState<string>()
+  const [matchedLibraryId, setMatchedLibraryId] = useState<string>()
+
+  const handleSearch = useCallback(
+    async (params: { llmId: string; platform: string; query: string }) => {
+      setSelectedLlmId(params.llmId)
+      setSelectedLibraryName(undefined)
+      setMatchedLibraryId(undefined)
+      setSearchLoading(true)
+      setHasSearched(true)
+
+      try {
+        const searchParams = new URLSearchParams({ q: params.query })
+        if (params.platform) {
+          searchParams.set("platforms", params.platform)
+        }
+        const res = await fetch(`/api/search?${searchParams.toString()}`)
+        const json = await res.json()
+        setSearchResults(json.data ?? [])
+      } catch {
+        setSearchResults([])
+      } finally {
+        setSearchLoading(false)
+      }
+    },
+    []
+  )
+
+  const handleSelectLibrary = useCallback(
+    async (libraryName: string) => {
+      setSelectedLibraryName(libraryName)
+      setMatchedLibraryId(undefined)
+
+      try {
+        const searchParams = new URLSearchParams({
+          search: libraryName,
+          limit: "1",
+        })
+        const res = await fetch(`/api/libraries?${searchParams.toString()}`)
+        const json = await res.json()
+        const match = (json.data ?? []).find(
+          (lib: { id: string; name: string }) =>
+            lib.name.toLowerCase() === libraryName.toLowerCase()
+        )
+        if (match) {
+          setMatchedLibraryId(match.id)
+        }
+      } catch {
+        // no match found
+      }
+    },
+    []
+  )
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -28,7 +85,7 @@ export default function Home() {
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
         <Hero />
 
-        {/* Step 1: Select LLM */}
+        {/* Step 1: Search for a library */}
         <motion.section
           initial="hidden"
           animate="visible"
@@ -37,23 +94,17 @@ export default function Home() {
         >
           <SectionHeader
             step={1}
-            title="Choose an LLM"
-            subtitle="Select the model you plan to use for coding"
+            title="Search for a library"
+            subtitle="Select an LLM, choose a platform, and search for a library"
           />
-          <LlmList
-            selectedId={selectedLlmId}
-            onSelect={(id) => {
-              setSelectedLlmId(id)
-              setSelectedLibraryId(undefined)
-            }}
-          />
+          <UnifiedSearchBar onSearch={handleSearch} />
         </motion.section>
 
-        {/* Step 2: Browse libraries */}
+        {/* Step 2: Select a library */}
         <AnimatePresence>
-          {selectedLlmId && (
+          {hasSearched && (
             <motion.section
-              key="library-section"
+              key="results-section"
               initial="hidden"
               animate="visible"
               exit="exit"
@@ -63,19 +114,29 @@ export default function Home() {
               <SectionHeader
                 step={2}
                 title="Select a library"
-                subtitle="Browse and search available libraries"
+                subtitle="Choose a library from the search results"
               />
-              <LibraryList
-                selectedId={selectedLibraryId}
-                onSelect={setSelectedLibraryId}
-              />
+              {!searchLoading && searchResults.length === 0 ? (
+                <EmptyState
+                  icon={SearchX}
+                  title="No results found"
+                  description="Try a different search term or platform."
+                />
+              ) : (
+                <SearchResults
+                  results={searchResults}
+                  loading={searchLoading}
+                  onSelectLibrary={handleSelectLibrary}
+                  selectedName={selectedLibraryName}
+                />
+              )}
             </motion.section>
           )}
         </AnimatePresence>
 
-        {/* Step 3: Version scores */}
+        {/* Step 3: Version compatibility */}
         <AnimatePresence>
-          {selectedLlmId && selectedLibraryId && (
+          {selectedLlmId && selectedLibraryName && (
             <motion.section
               key="version-section"
               initial="hidden"
@@ -89,10 +150,18 @@ export default function Home() {
                 title="Version compatibility"
                 subtitle="Scores based on LLM training cutoff heuristics"
               />
-              <VersionScores
-                llmId={selectedLlmId}
-                libraryId={selectedLibraryId}
-              />
+              {matchedLibraryId ? (
+                <VersionScores
+                  llmId={selectedLlmId}
+                  libraryId={matchedLibraryId}
+                />
+              ) : (
+                <EmptyState
+                  icon={DatabaseZap}
+                  title="Library not in local database"
+                  description={`"${selectedLibraryName}" was not found in the local database. Version scoring is not available yet for this library.`}
+                />
+              )}
             </motion.section>
           )}
         </AnimatePresence>
