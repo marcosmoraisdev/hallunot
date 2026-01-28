@@ -87,7 +87,7 @@ export function VersionScores({ llmId, libraryId }: VersionScoresProps) {
               transition={{ duration: 0.3, delay: i * 0.05 }}
               className={cn(
                 "flex cursor-pointer flex-col gap-3 rounded-xl border border-border/50 bg-card p-4",
-                "transition-colors hover:bg-accent/30 hover:shadow-md",
+                "transition-colors hover:bg-muted hover:shadow-md",
                 "sm:flex-row sm:items-center sm:justify-between"
               )}
             >

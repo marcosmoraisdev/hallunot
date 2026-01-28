@@ -1,6 +1,6 @@
 "use client"
 
-import { Zap, BookOpen, Lightbulb, Heart } from "lucide-react"
+import { BookOpen, Lightbulb, Heart } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Header() {
@@ -8,9 +8,6 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
           <span className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
             Hallu<span className="text-risk-high">not</span>
           </span>

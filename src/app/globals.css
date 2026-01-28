@@ -33,16 +33,16 @@
   --foreground: 0 0% 95%;
   --card: 0 0% 14%;
   --card-foreground: 0 0% 95%;
-  --border: 0 0% 20%;
-  --input: 0 0% 16%;
+  --border: 0 0% 22%;
+  --input: 0 0% 18%;
   --ring: 0 0% 95%;
-  --muted: 0 0% 16%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 0 0% 16%;
+  --muted: 0 0% 24%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 0 0% 26%;
   --accent-foreground: 0 0% 95%;
-  --popover: 0 0% 12%;
+  --popover: 0 0% 13%;
   --popover-foreground: 0 0% 95%;
-  --secondary: 0 0% 15%;
+  --secondary: 0 0% 20%;
   --secondary-foreground: 0 0% 95%;
   --primary: 0 0% 95%;
   --primary-foreground: 0 0% 11%;
@@ -92,7 +92,12 @@ body {
   border-color: hsl(var(--border));
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
   letter-spacing: -0.025em;
   font-weight: 700;
