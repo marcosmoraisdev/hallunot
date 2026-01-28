@@ -6,6 +6,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") ?? "1")
     const limit = parseInt(searchParams.get("limit") ?? "20")
+    const search = searchParams.get("search") ?? undefined
 
     if (page < 1 || !Number.isInteger(page)) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const { data, total } = await findLibraries(page, limit)
+    const { data, total } = await findLibraries(page, limit, search)
     const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({

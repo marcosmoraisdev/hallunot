@@ -82,6 +82,8 @@ export async function GET(request: Request) {
         score,
         risk,
         reason,
+        releaseDate: version.releaseDate,
+        breaking: version.breaking,
       }
     })
 
