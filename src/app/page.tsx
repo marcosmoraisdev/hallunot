@@ -53,7 +53,7 @@ export default function Home() {
   )
 
   const handleSelectLibrary = useCallback(
-    async (libraryName: string) => {
+    async (libraryName: string, _platform: string) => {
       setSelectedLibraryName(libraryName)
       setMatchedLibraryId(undefined)
 
