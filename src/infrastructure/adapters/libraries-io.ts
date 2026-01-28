@@ -44,7 +44,8 @@ function getApiKey(): string {
 
 export async function fetchPlatforms(): Promise<LibrariesIoPlatform[]> {
   const key = getApiKey()
-  const url = `${BASE_URL}/platforms?api_key=${key}`
+  const searchParams = new URLSearchParams({ api_key: key })
+  const url = `${BASE_URL}/platforms?${searchParams.toString()}`
 
   const res = await fetch(url, { next: { revalidate: 86400 } })
 
@@ -62,8 +63,8 @@ export async function searchLibraries(
   const searchParams = new URLSearchParams({ api_key: key, q: params.q })
 
   if (params.platforms) searchParams.set("platforms", params.platforms)
-  if (params.page) searchParams.set("page", String(params.page))
-  if (params.per_page) searchParams.set("per_page", String(params.per_page))
+  if (params.page !== undefined) searchParams.set("page", String(params.page))
+  if (params.per_page !== undefined) searchParams.set("per_page", String(params.per_page))
   if (params.sort) searchParams.set("sort", params.sort)
 
   const url = `${BASE_URL}/search?${searchParams.toString()}`
