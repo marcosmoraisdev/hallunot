@@ -1,0 +1,32 @@
+[
+  {
+    "id": "gpt-4o",
+    "name": "GPT-4o",
+    "provider": "OpenAI",
+    "approxCutoff": 1696118400000
+  },
+  {
+    "id": "gpt-4-turbo",
+    "name": "GPT-4 Turbo",
+    "provider": "OpenAI",
+    "approxCutoff": 1701388800000
+  },
+  {
+    "id": "claude-3-5-sonnet",
+    "name": "Claude 3.5 Sonnet",
+    "provider": "Anthropic",
+    "approxCutoff": 1711929600000
+  },
+  {
+    "id": "claude-3-opus",
+    "name": "Claude 3 Opus",
+    "provider": "Anthropic",
+    "approxCutoff": 1693526400000
+  },
+  {
+    "id": "gemini-1-5-pro",
+    "name": "Gemini 1.5 Pro",
+    "provider": "Google",
+    "approxCutoff": 1699056000000
+  }
+]
