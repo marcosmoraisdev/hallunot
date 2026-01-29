@@ -1,3 +1,8 @@
+export interface LibrariesIoVersion {
+  number: string
+  published_at: string
+}
+
 export interface LibrariesIoPlatform {
   name: string
   project_count: number
@@ -70,6 +75,24 @@ export async function searchLibraries(
   const url = `${BASE_URL}/search?${searchParams.toString()}`
 
   const res = await fetch(url, { next: { revalidate: 300 } }) // 5 minutes
+
+  if (!res.ok) {
+    throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
+  }
+
+  return res.json()
+}
+
+export async function fetchProjectVersions(
+  platform: string,
+  projectName: string
+): Promise<LibrariesIoVersion[]> {
+  const key = getApiKey()
+  const encodedName = encodeURIComponent(projectName)
+  const searchParams = new URLSearchParams({ api_key: key })
+  const url = `${BASE_URL}/${platform}/${encodedName}/versions?${searchParams.toString()}`
+
+  const res = await fetch(url, { next: { revalidate: 300 } })
 
   if (!res.ok) {
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)

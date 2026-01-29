@@ -182,3 +182,68 @@ describe("searchLibraries", () => {
     )
   })
 })
+
+describe("fetchProjectVersions", () => {
+  it("calls Libraries.io project endpoint and returns versions", async () => {
+    const mockVersions = [
+      { number: "18.2.0", published_at: "2022-06-14T00:00:00.000Z" },
+      { number: "18.3.0", published_at: "2024-04-25T00:00:00.000Z" },
+    ]
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: () => Promise.resolve(mockVersions),
+    } as unknown as Response)
+
+    const { fetchProjectVersions } = await import("../libraries-io")
+    const result = await fetchProjectVersions("NPM", "react")
+
+    expect(result).toEqual(mockVersions)
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string
+    expect(calledUrl).toContain("https://libraries.io/api/NPM/react/versions")
+    expect(calledUrl).toContain("api_key=test-api-key")
+  })
+
+  it("encodes library name with special characters", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: () => Promise.resolve([]),
+    } as unknown as Response)
+
+    const { fetchProjectVersions } = await import("../libraries-io")
+    await fetchProjectVersions("NPM", "@angular/core")
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string
+    expect(calledUrl).toContain("%40angular%2Fcore")
+  })
+
+  it("throws on non-OK response", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      json: () => Promise.resolve({}),
+    } as unknown as Response)
+
+    const { fetchProjectVersions } = await import("../libraries-io")
+
+    await expect(fetchProjectVersions("NPM", "nonexistent-lib")).rejects.toThrow(
+      "Libraries.io API error: 404 Not Found"
+    )
+  })
+
+  it("throws when API key is missing", async () => {
+    delete process.env.LIBRARIES_IO_API_KEY
+
+    const { fetchProjectVersions } = await import("../libraries-io")
+
+    await expect(fetchProjectVersions("NPM", "react")).rejects.toThrow(
+      "LIBRARIES_IO_API_KEY environment variable is not set"
+    )
+  })
+})
