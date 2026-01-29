@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server"
-import { findAllLlms } from "@/infrastructure/repositories/llm-repository"
+
+// TODO: Task 9 will update this to use JSON data file
+// Temporary stub to allow build to pass after Prisma removal
 
 export async function GET() {
-  try {
-    const llms = await findAllLlms()
-    return NextResponse.json({ data: llms })
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch LLMs" },
-      { status: 500 }
-    )
-  }
+  // Return empty array until Task 9 implements JSON-based data access
+  return NextResponse.json({ data: [] })
 }
