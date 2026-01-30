@@ -10,7 +10,7 @@ import { SectionHeader } from "@/components/section-header"
 import { UnifiedSearchBar } from "@/components/unified-search-bar"
 import { SearchResults } from "@/components/search-results"
 import type { SearchResultItem } from "@/components/search-results"
-import { LlmSelector } from "@/components/llm-selector"
+import { LlmGridSelector } from "@/components/llm-grid-selector"
 import { VersionScores } from "@/components/version-scores"
 import { Disclaimer } from "@/components/disclaimer"
 import { EmptyState } from "@/components/empty-state"
@@ -163,7 +163,7 @@ export default function Home() {
                 title="Select an LLM"
                 subtitle={`Choose which LLM to evaluate with "${selectedLibrary.name}"`}
               />
-              <LlmSelector
+              <LlmGridSelector
                 value={selectedLlmName}
                 onValueChange={handleSelectLlm}
               />
