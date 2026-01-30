@@ -184,17 +184,35 @@ describe("searchLibraries", () => {
 })
 
 describe("fetchProjectVersions", () => {
-  it("calls Libraries.io project endpoint and returns versions", async () => {
+  it("calls Libraries.io project endpoint and extracts versions from project object", async () => {
     const mockVersions = [
       { number: "18.2.0", published_at: "2022-06-14T00:00:00.000Z" },
       { number: "18.3.0", published_at: "2024-04-25T00:00:00.000Z" },
     ]
 
+    const mockProject = {
+      name: "react",
+      platform: "NPM",
+      description: "A JavaScript library for building user interfaces",
+      homepage: "https://reactjs.org",
+      repository_url: "https://github.com/facebook/react",
+      normalized_licenses: ["MIT"],
+      rank: 30,
+      latest_release_number: "18.3.0",
+      latest_stable_release_number: "18.3.0",
+      latest_stable_release_published_at: "2024-04-25T00:00:00.000Z",
+      language: "JavaScript",
+      stars: 200000,
+      forks: 40000,
+      dependents_count: 150000,
+      versions: mockVersions,
+    }
+
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       status: 200,
       statusText: "OK",
-      json: () => Promise.resolve(mockVersions),
+      json: () => Promise.resolve(mockProject),
     } as unknown as Response)
 
     const { fetchProjectVersions } = await import("../libraries-io")
@@ -203,16 +221,66 @@ describe("fetchProjectVersions", () => {
     expect(result).toEqual(mockVersions)
 
     const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(calledUrl).toContain("https://libraries.io/api/NPM/react/versions")
+    expect(calledUrl).toContain("https://libraries.io/api/NPM/react")
     expect(calledUrl).toContain("api_key=test-api-key")
   })
 
-  it("encodes library name with special characters", async () => {
+  it("returns empty array when project has null versions", async () => {
+    const mockProject = {
+      name: "some-lib",
+      platform: "NPM",
+      description: null,
+      homepage: null,
+      repository_url: null,
+      normalized_licenses: [],
+      rank: 0,
+      latest_release_number: null,
+      latest_stable_release_number: null,
+      latest_stable_release_published_at: null,
+      language: null,
+      stars: 0,
+      forks: 0,
+      dependents_count: 0,
+      versions: null,
+    }
+
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       status: 200,
       statusText: "OK",
-      json: () => Promise.resolve([]),
+      json: () => Promise.resolve(mockProject),
+    } as unknown as Response)
+
+    const { fetchProjectVersions } = await import("../libraries-io")
+    const result = await fetchProjectVersions("NPM", "some-lib")
+
+    expect(result).toEqual([])
+  })
+
+  it("encodes library name with special characters", async () => {
+    const mockProject = {
+      name: "@angular/core",
+      platform: "NPM",
+      description: null,
+      homepage: null,
+      repository_url: null,
+      normalized_licenses: [],
+      rank: 0,
+      latest_release_number: null,
+      latest_stable_release_number: null,
+      latest_stable_release_published_at: null,
+      language: null,
+      stars: 0,
+      forks: 0,
+      dependents_count: 0,
+      versions: [],
+    }
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: () => Promise.resolve(mockProject),
     } as unknown as Response)
 
     const { fetchProjectVersions } = await import("../libraries-io")
