@@ -28,23 +28,42 @@ export default function Home() {
 
   const [selectedLibrary, setSelectedLibrary] = useState<{ name: string; platform: string } | null>(null)
   const [selectedLlmName, setSelectedLlmName] = useState("")
+  const [libraryPage, setLibraryPage] = useState(1)
+  const [libraryTotalPages, setLibraryTotalPages] = useState(1)
+  const [currentSearchParams, setCurrentSearchParams] = useState<{ platform: string; query: string } | null>(null)
 
   const handleSearch = useCallback(
-    async (params: { platform: string; query: string }) => {
-      // Clear downstream state
-      setSelectedLibrary(null)
-      setSelectedLlmName("")
+    async (params: { platform: string; query: string }, page = 1) => {
+      // Clear downstream state only on new search (page 1)
+      if (page === 1) {
+        setSelectedLibrary(null)
+        setSelectedLlmName("")
+      }
       setSearchLoading(true)
       setHasSearched(true)
+      setLibraryPage(page)
+      setCurrentSearchParams(params)
 
       try {
         const searchParams = new URLSearchParams({ q: params.query })
         if (params.platform) {
           searchParams.set("platforms", params.platform)
         }
+        searchParams.set("page", String(page))
+        searchParams.set("per_page", "9")
+
         const res = await fetch(`/api/search?${searchParams.toString()}`)
         const json = await res.json()
         setSearchResults(json.data ?? [])
+
+        // Libraries.io doesn't return total count, so estimate based on results
+        // If we got a full page, assume there's at least one more page
+        const hasMore = (json.data ?? []).length === 9
+        if (page === 1) {
+          setLibraryTotalPages(hasMore ? page + 1 : page)
+        } else if (hasMore) {
+          setLibraryTotalPages((prev) => Math.max(prev, page + 1))
+        }
       } catch {
         setSearchResults([])
       } finally {
@@ -62,6 +81,12 @@ export default function Home() {
   const handleSelectLlm = useCallback((llmName: string) => {
     setSelectedLlmName(llmName)
   }, [])
+
+  const handleLibraryPageChange = useCallback((newPage: number) => {
+    if (currentSearchParams) {
+      handleSearch(currentSearchParams, newPage)
+    }
+  }, [currentSearchParams, handleSearch])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -113,6 +138,9 @@ export default function Home() {
                   loading={searchLoading}
                   onSelectLibrary={handleSelectLibrary}
                   selectedName={selectedLibrary?.name}
+                  page={libraryPage}
+                  totalPages={libraryTotalPages}
+                  onPageChange={handleLibraryPageChange}
                 />
               )}
             </motion.section>
