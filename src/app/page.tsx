@@ -1,14 +1,16 @@
+// src/app/page.tsx
 "use client"
 
 import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Github, Linkedin, SearchX, DatabaseZap } from "lucide-react"
+import { Github, Linkedin, SearchX, Bot } from "lucide-react"
 import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { SectionHeader } from "@/components/section-header"
 import { UnifiedSearchBar } from "@/components/unified-search-bar"
 import { SearchResults } from "@/components/search-results"
 import type { SearchResultItem } from "@/components/search-results"
+import { LlmSelector } from "@/components/llm-selector"
 import { VersionScores } from "@/components/version-scores"
 import { Disclaimer } from "@/components/disclaimer"
 import { EmptyState } from "@/components/empty-state"
@@ -23,15 +25,15 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
-  const [selectedLlmId, setSelectedLlmId] = useState<string>()
-  const [selectedLibraryName, setSelectedLibraryName] = useState<string>()
-  const [matchedLibraryId, setMatchedLibraryId] = useState<string>()
+
+  const [selectedLibrary, setSelectedLibrary] = useState<{ name: string; platform: string } | null>(null)
+  const [selectedLlmName, setSelectedLlmName] = useState("")
 
   const handleSearch = useCallback(
-    async (params: { llmId: string; platform: string; query: string }) => {
-      setSelectedLlmId(params.llmId)
-      setSelectedLibraryName(undefined)
-      setMatchedLibraryId(undefined)
+    async (params: { platform: string; query: string }) => {
+      // Clear downstream state
+      setSelectedLibrary(null)
+      setSelectedLlmName("")
       setSearchLoading(true)
       setHasSearched(true)
 
@@ -52,31 +54,14 @@ export default function Home() {
     []
   )
 
-  const handleSelectLibrary = useCallback(
-    async (libraryName: string, _platform: string) => {
-      setSelectedLibraryName(libraryName)
-      setMatchedLibraryId(undefined)
+  const handleSelectLibrary = useCallback((libraryName: string, platform: string) => {
+    setSelectedLibrary({ name: libraryName, platform })
+    setSelectedLlmName("") // Reset LLM when library changes
+  }, [])
 
-      try {
-        const searchParams = new URLSearchParams({
-          search: libraryName,
-          limit: "1",
-        })
-        const res = await fetch(`/api/libraries?${searchParams.toString()}`)
-        const json = await res.json()
-        const match = (json.data ?? []).find(
-          (lib: { id: string; name: string }) =>
-            lib.name.toLowerCase() === libraryName.toLowerCase()
-        )
-        if (match) {
-          setMatchedLibraryId(match.id)
-        }
-      } catch {
-        // no match found
-      }
-    },
-    []
-  )
+  const handleSelectLlm = useCallback((llmName: string) => {
+    setSelectedLlmName(llmName)
+  }, [])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -95,7 +80,7 @@ export default function Home() {
           <SectionHeader
             step={1}
             title="Search for a library"
-            subtitle="Select an LLM, choose a platform, and search for a library"
+            subtitle="Choose a platform and search for a library"
           />
           <UnifiedSearchBar onSearch={handleSearch} />
         </motion.section>
@@ -127,16 +112,40 @@ export default function Home() {
                   results={searchResults}
                   loading={searchLoading}
                   onSelectLibrary={handleSelectLibrary}
-                  selectedName={selectedLibraryName}
+                  selectedName={selectedLibrary?.name}
                 />
               )}
             </motion.section>
           )}
         </AnimatePresence>
 
-        {/* Step 3: Version compatibility */}
+        {/* Step 3: Select an LLM */}
         <AnimatePresence>
-          {selectedLlmId && selectedLibraryName && (
+          {selectedLibrary && (
+            <motion.section
+              key="llm-section"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={sectionVariants}
+              transition={{ duration: 0.4 }}
+            >
+              <SectionHeader
+                step={3}
+                title="Select an LLM"
+                subtitle={`Choose which LLM to evaluate with "${selectedLibrary.name}"`}
+              />
+              <LlmSelector
+                value={selectedLlmName}
+                onValueChange={handleSelectLlm}
+              />
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* Step 4: Version compatibility */}
+        <AnimatePresence>
+          {selectedLibrary && selectedLlmName && (
             <motion.section
               key="version-section"
               initial="hidden"
@@ -146,22 +155,15 @@ export default function Home() {
               transition={{ duration: 0.4 }}
             >
               <SectionHeader
-                step={3}
+                step={4}
                 title="Version compatibility"
-                subtitle="Scores based on LLM training cutoff heuristics"
+                subtitle={`Scores for ${selectedLibrary.name} with ${selectedLlmName}`}
               />
-              {matchedLibraryId ? (
-                <VersionScores
-                  llmId={selectedLlmId}
-                  libraryId={matchedLibraryId}
-                />
-              ) : (
-                <EmptyState
-                  icon={DatabaseZap}
-                  title="Library not in local database"
-                  description={`"${selectedLibraryName}" was not found in the local database. Version scoring is not available yet for this library.`}
-                />
-              )}
+              <VersionScores
+                llmName={selectedLlmName}
+                libraryName={selectedLibrary.name}
+                platform={selectedLibrary.platform || "NPM"}
+              />
             </motion.section>
           )}
         </AnimatePresence>
