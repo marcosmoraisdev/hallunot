@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { computeScore } from "../scoring"
-import { SIX_MONTHS_MS, TWELVE_MONTHS_MS } from "../../../lib/constants"
+import { SIX_MONTHS_MS } from "../../../lib/constants"
 
 const CUTOFF = new Date("2024-10-01").getTime()
 

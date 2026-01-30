@@ -47,6 +47,7 @@ export function FilterableSelect({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when popover opens
       setFilter("")
       setTimeout(() => inputRef.current?.focus(), 0)
     }

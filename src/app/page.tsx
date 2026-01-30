@@ -3,7 +3,7 @@
 
 import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Github, Linkedin, SearchX, Bot } from "lucide-react"
+import { Github, Linkedin, SearchX } from "lucide-react"
 import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { SectionHeader } from "@/components/section-header"

@@ -39,6 +39,7 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
   const [expandedBuckets, setExpandedBuckets] = useState<Set<number>>(new Set())
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state reset for data fetch
     setLoading(true)
     setError(null)
     setBuckets([])

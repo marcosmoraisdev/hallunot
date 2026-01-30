@@ -33,10 +33,12 @@ export function LibraryList({ onSelect, selectedId }: LibraryListProps) {
   const debouncedSearch = useDebounce(search, 300)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset page when search changes
     setPage(1)
   }, [debouncedSearch])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional loading state for data fetch
     setLoading(true)
     const params = new URLSearchParams({
       page: String(page),

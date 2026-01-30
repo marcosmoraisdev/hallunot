@@ -49,6 +49,7 @@ export function LlmList({ onSelect, selectedId }: LlmListProps) {
   )
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset page when search changes
     setPage(1)
   }, [search])
 
