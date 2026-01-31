@@ -50,6 +50,7 @@ export async function GET(request: Request) {
       stars: r.stars,
       language: r.language,
       rank: r.rank,
+      versions: r.versions ?? [],
     }))
 
     return NextResponse.json({ data })

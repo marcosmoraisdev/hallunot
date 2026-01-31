@@ -14,6 +14,7 @@ export interface SearchResultItem {
   stars: number
   language: string | null
   rank: number
+  versions: { number: string; published_at: string }[]
 }
 
 interface SearchResultsProps {
@@ -95,6 +96,11 @@ export function SearchResults({
                 {item.latestVersion && (
                   <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                     v{item.latestVersion}
+                  </span>
+                )}
+                {item.versions.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {item.versions.length} versions
                   </span>
                 )}
                 {item.stars > 0 && (
