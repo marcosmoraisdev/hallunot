@@ -22,8 +22,9 @@ interface SearchResultsProps {
   onSelectLibrary: (libraryName: string, platform: string) => void
   selectedName?: string
   page?: number
-  totalPages?: number
+  hasMore?: boolean
   onPageChange?: (page: number) => void
+  noMoreMessage?: string
 }
 
 export function SearchResults({
@@ -31,9 +32,10 @@ export function SearchResults({
   loading,
   onSelectLibrary,
   selectedName,
-  page = 1,
-  totalPages = 1,
+  page = 0,
+  hasMore = false,
   onPageChange,
+  noMoreMessage,
 }: SearchResultsProps) {
   if (loading) {
     return (
@@ -114,9 +116,14 @@ export function SearchResults({
       {onPageChange && (
         <MiniPagination
           page={page}
-          totalPages={totalPages}
+          hasMore={hasMore}
           onPageChange={onPageChange}
         />
+      )}
+      {noMoreMessage && (
+        <p className="pt-4 text-center text-sm text-muted-foreground">
+          {noMoreMessage}
+        </p>
       )}
     </div>
   )

@@ -20,8 +20,8 @@ export function LlmGridSelector({
   const [llms, setLlms] = useState<Llm[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
 
   const fetchLlms = useCallback(async (searchTerm: string, pageNum: number) => {
     setLoading(true)
@@ -36,11 +36,14 @@ export function LlmGridSelector({
 
       const res = await fetch(`/api/llms?${params.toString()}`)
       const json = await res.json()
-      setLlms(json.data ?? [])
-      setTotalPages(json.pagination?.totalPages ?? 1)
+      const data = json.data ?? []
+      setLlms(data)
+      // Determine if there are more results
+      setHasMore(data.length === 9)
     } catch (err) {
       console.error("Failed to fetch LLMs:", err)
       setLlms([])
+      setHasMore(false)
     } finally {
       setLoading(false)
     }
@@ -48,14 +51,14 @@ export function LlmGridSelector({
 
   // Initial fetch
   useEffect(() => {
-    fetchLlms("", 1)
+    fetchLlms("", 0)
   }, [fetchLlms])
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPage(1)
-      fetchLlms(search, 1)
+      setPage(0)
+      fetchLlms(search, 0)
     }, 300)
     return () => clearTimeout(timer)
   }, [search, fetchLlms])
@@ -108,7 +111,7 @@ export function LlmGridSelector({
           </div>
           <MiniPagination
             page={page}
-            totalPages={totalPages}
+            hasMore={hasMore}
             onPageChange={handlePageChange}
           />
         </div>

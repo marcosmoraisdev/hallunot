@@ -5,18 +5,19 @@ import { cn } from "@/lib/cn"
 
 interface MiniPaginationProps {
   page: number
-  totalPages: number
+  hasMore: boolean
   onPageChange: (page: number) => void
 }
 
-export function MiniPagination({ page, totalPages, onPageChange }: MiniPaginationProps) {
-  if (totalPages <= 1) return null
+export function MiniPagination({ page, hasMore, onPageChange }: MiniPaginationProps) {
+  // Don't show pagination if on first page with no more results
+  if (page === 0 && !hasMore) return null
 
   return (
     <div className="flex items-center justify-center gap-3 pt-4">
       <button
         onClick={() => onPageChange(page - 1)}
-        disabled={page <= 1}
+        disabled={page === 0}
         aria-label="Previous page"
         className={cn(
           "inline-flex h-7 w-7 items-center justify-center rounded-md",
@@ -29,12 +30,12 @@ export function MiniPagination({ page, totalPages, onPageChange }: MiniPaginatio
       </button>
 
       <span className="text-xs tabular-nums text-muted-foreground">
-        {page} / {totalPages}
+        Page {page + 1}
       </span>
 
       <button
         onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages}
+        disabled={!hasMore}
         aria-label="Next page"
         className={cn(
           "inline-flex h-7 w-7 items-center justify-center rounded-md",

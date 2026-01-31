@@ -28,16 +28,18 @@ export default function Home() {
 
   const [selectedLibrary, setSelectedLibrary] = useState<{ name: string; platform: string } | null>(null)
   const [selectedLlmName, setSelectedLlmName] = useState("")
-  const [libraryPage, setLibraryPage] = useState(1)
-  const [libraryTotalPages, setLibraryTotalPages] = useState(1)
+  const [libraryPage, setLibraryPage] = useState(0)
+  const [hasMoreLibraries, setHasMoreLibraries] = useState(false)
+  const [noMoreMessage, setNoMoreMessage] = useState("")
   const [currentSearchParams, setCurrentSearchParams] = useState<{ platform: string; query: string } | null>(null)
 
   const handleSearch = useCallback(
-    async (params: { platform: string; query: string }, page = 1) => {
-      // Clear downstream state only on new search (page 1)
-      if (page === 1) {
+    async (params: { platform: string; query: string }, page = 0) => {
+      // Clear downstream state only on new search (page 0)
+      if (page === 0) {
         setSelectedLibrary(null)
         setSelectedLlmName("")
+        setNoMoreMessage("")
       }
       setSearchLoading(true)
       setHasSearched(true)
@@ -54,18 +56,23 @@ export default function Home() {
 
         const res = await fetch(`/api/search?${searchParams.toString()}`)
         const json = await res.json()
-        setSearchResults(json.data ?? [])
+        const data = json.data ?? []
+        setSearchResults(data)
 
-        // Libraries.io doesn't return total count, so estimate based on results
-        // If we got a full page, assume there's at least one more page
-        const hasMore = (json.data ?? []).length === 9
-        if (page === 1) {
-          setLibraryTotalPages(hasMore ? page + 1 : page)
-        } else if (hasMore) {
-          setLibraryTotalPages((prev) => Math.max(prev, page + 1))
+        // Determine if there are more results
+        const hasMore = data.length === 9
+        setHasMoreLibraries(hasMore)
+
+        // Show message when navigating to a page with no results
+        if (data.length === 0 && page > 0) {
+          setNoMoreMessage("No more results")
+        } else {
+          setNoMoreMessage("")
         }
       } catch {
         setSearchResults([])
+        setHasMoreLibraries(false)
+        setNoMoreMessage("")
       } finally {
         setSearchLoading(false)
       }
@@ -139,8 +146,9 @@ export default function Home() {
                   onSelectLibrary={handleSelectLibrary}
                   selectedName={selectedLibrary?.name}
                   page={libraryPage}
-                  totalPages={libraryTotalPages}
+                  hasMore={hasMoreLibraries}
                   onPageChange={handleLibraryPageChange}
+                  noMoreMessage={noMoreMessage}
                 />
               )}
             </motion.section>
