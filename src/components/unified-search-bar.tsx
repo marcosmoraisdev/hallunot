@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react"
 import * as Select from "@radix-ui/react-select"
+import * as ScrollArea from "@radix-ui/react-scroll-area"
 import { Layers, Search, ChevronDown, Check, Loader2 } from "lucide-react"
 import { cn } from "@/lib/cn"
 
@@ -29,6 +30,11 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
 
   const [selectedPlatform, setSelectedPlatform] = useState("")
   const [query, setQuery] = useState("")
+  const [platformFilter, setPlatformFilter] = useState("")
+
+  const filteredPlatforms = platforms.filter((p) =>
+    p.name.toLowerCase().includes(platformFilter.toLowerCase())
+  )
 
   useEffect(() => {
     fetch("/api/platforms")
@@ -62,7 +68,13 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
       )}
     >
       {/* Platform Dropdown */}
-      <Select.Root value={selectedPlatform} onValueChange={setSelectedPlatform}>
+      <Select.Root
+        value={selectedPlatform}
+        onValueChange={setSelectedPlatform}
+        onOpenChange={(open) => {
+          if (!open) setPlatformFilter("")
+        }}
+      >
         <Select.Trigger
           className={cn(
             "flex shrink-0 items-center gap-2 border-r border-border/50 px-3 py-2.5",
@@ -93,30 +105,62 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
             position="popper"
             sideOffset={8}
           >
-            <Select.Viewport className="p-1">
-              {platforms.map((platform) => (
-                <Select.Item
-                  key={platform.name}
-                  value={platform.name}
-                  className={cn(
-                    "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
-                    "text-foreground transition-colors",
-                    "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
-                    "data-[state=checked]:text-primary"
+            {/* Filter input */}
+            <div className="border-b border-border/50 p-2">
+              <input
+                type="text"
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+                placeholder="Filter platforms..."
+                className={cn(
+                  "w-full rounded-md border border-border/50 bg-background px-2.5 py-1.5",
+                  "text-sm text-foreground placeholder:text-muted-foreground",
+                  "outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                )}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
+            <ScrollArea.Root className="h-[240px] overflow-hidden">
+              <Select.Viewport asChild>
+                <ScrollArea.Viewport className="h-full w-full p-1">
+                  {filteredPlatforms.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                      No platforms found
+                    </div>
+                  ) : (
+                    filteredPlatforms.map((platform) => (
+                      <Select.Item
+                        key={platform.name}
+                        value={platform.name}
+                        className={cn(
+                          "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
+                          "text-foreground transition-colors",
+                          "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
+                          "data-[state=checked]:text-primary"
+                        )}
+                      >
+                        <Select.ItemIndicator className="absolute left-1 flex items-center">
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        </Select.ItemIndicator>
+                        <div className="flex items-center gap-2 pl-4">
+                          <Select.ItemText>{platform.name}</Select.ItemText>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatProjectCount(platform.projectCount)} projects
+                          </span>
+                        </div>
+                      </Select.Item>
+                    ))
                   )}
-                >
-                  <Select.ItemIndicator className="absolute left-1 flex items-center">
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  </Select.ItemIndicator>
-                  <div className="flex items-center gap-2 pl-4">
-                    <Select.ItemText>{platform.name}</Select.ItemText>
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatProjectCount(platform.projectCount)} projects
-                    </span>
-                  </div>
-                </Select.Item>
-              ))}
-            </Select.Viewport>
+                </ScrollArea.Viewport>
+              </Select.Viewport>
+              <ScrollArea.Scrollbar
+                orientation="vertical"
+                className="flex w-2.5 touch-none select-none p-0.5 transition-colors"
+              >
+                <ScrollArea.Thumb className="relative flex-1 rounded-full bg-border" />
+              </ScrollArea.Scrollbar>
+            </ScrollArea.Root>
           </Select.Content>
         </Select.Portal>
       </Select.Root>
