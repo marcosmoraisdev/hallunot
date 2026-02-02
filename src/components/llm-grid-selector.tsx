@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { SearchInput } from "./search-input"
 import { LlmCard } from "./llm-card"
 import { MiniPagination } from "./mini-pagination"
-import type { Llm } from "@/domain/models"
+import type { LlmModelResponse } from "@/domain/models"
 
 interface LlmGridSelectorProps {
   value: string
@@ -17,7 +17,7 @@ export function LlmGridSelector({
   onValueChange,
   disabled = false,
 }: LlmGridSelectorProps) {
-  const [llms, setLlms] = useState<Llm[]>([])
+  const [llms, setLlms] = useState<LlmModelResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(0)
@@ -36,10 +36,10 @@ export function LlmGridSelector({
 
       const res = await fetch(`/api/llms?${params.toString()}`)
       const json = await res.json()
-      const data = json.data ?? []
-      setLlms(data)
+      const models = json.models ?? []
+      setLlms(models)
       // Determine if there are more results
-      setHasMore(data.length === 9)
+      setHasMore(models.length === 9)
     } catch (err) {
       console.error("Failed to fetch LLMs:", err)
       setLlms([])

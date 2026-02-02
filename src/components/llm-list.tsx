@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Calendar, Bot, SearchX } from "lucide-react"
 import { cn } from "@/lib/cn"
-import { formatDate } from "@/lib/date"
 import { SearchInput } from "./search-input"
 import { Pagination } from "./pagination"
 import { SkeletonCard } from "./skeleton-card"
 import { EmptyState } from "./empty-state"
-import type { Llm } from "@/domain/models"
+import type { LlmModelResponse } from "@/domain/models"
 
 interface LlmListProps {
   onSelect: (llmId: string) => void
@@ -19,7 +18,7 @@ interface LlmListProps {
 const ITEMS_PER_PAGE = 20
 
 export function LlmList({ onSelect, selectedId }: LlmListProps) {
-  const [llms, setLlms] = useState<Llm[]>([])
+  const [llms, setLlms] = useState<LlmModelResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
@@ -27,7 +26,7 @@ export function LlmList({ onSelect, selectedId }: LlmListProps) {
   useEffect(() => {
     fetch("/api/llms")
       .then((res) => res.json())
-      .then((json) => setLlms(json.data))
+      .then((json) => setLlms(json.models ?? []))
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -38,7 +37,7 @@ export function LlmList({ onSelect, selectedId }: LlmListProps) {
     return llms.filter(
       (llm) =>
         llm.name.toLowerCase().includes(q) ||
-        llm.provider.toLowerCase().includes(q)
+        llm.providerName.toLowerCase().includes(q)
     )
   }, [llms, search])
 
@@ -97,12 +96,12 @@ export function LlmList({ onSelect, selectedId }: LlmListProps) {
                     </span>
                   </div>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {llm.provider}
+                    {llm.providerName}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  <span>Cutoff: {formatDate(llm.approxCutoff)}</span>
+                  <span>Cutoff: {llm.knowledgeCutoff ?? "Unknown"}</span>
                 </div>
               </motion.button>
             )

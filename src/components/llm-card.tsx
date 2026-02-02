@@ -3,21 +3,18 @@
 import { motion } from "framer-motion"
 import { Bot, Calendar } from "lucide-react"
 import { cn } from "@/lib/cn"
-import type { Llm } from "@/domain/models"
+import type { LlmModelResponse } from "@/domain/models"
 
 interface LlmCardProps {
-  llm: Llm
+  llm: LlmModelResponse
   isSelected: boolean
   onSelect: (llmName: string) => void
   index: number
 }
 
 export function LlmCard({ llm, isSelected, onSelect, index }: LlmCardProps) {
-  const cutoffDate = new Date(llm.approxCutoff)
-  const formattedCutoff = cutoffDate.toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  })
+  // Format knowledge cutoff date from string (e.g., "2024-04") or show "Unknown"
+  const formattedCutoff = llm.knowledgeCutoff ?? "Unknown"
 
   return (
     <motion.button
@@ -40,7 +37,7 @@ export function LlmCard({ llm, isSelected, onSelect, index }: LlmCardProps) {
           </span>
         </div>
         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {llm.provider}
+          {llm.providerName}
         </span>
       </div>
 

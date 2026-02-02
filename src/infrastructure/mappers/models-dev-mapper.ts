@@ -18,7 +18,7 @@ export function mapModel(
     id: dto.id || modelId,
     providerId,
     name: dto.name,
-    family: dto.family,
+    family: dto.family ?? "",
     releaseDate: dto.release_date,
     lastUpdated: dto.last_updated,
     knowledgeCutoff: dto.knowledge,
