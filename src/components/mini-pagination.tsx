@@ -17,10 +17,10 @@ export function MiniPagination({ page, hasMore, onPageChange }: MiniPaginationPr
     <div className="flex items-center justify-center gap-3 pt-4">
       <button
         onClick={() => onPageChange(page - 1)}
-        disabled={page === 0}
+        disabled={page === 1}
         aria-label="Previous page"
         className={cn(
-          "inline-flex h-7 w-7 items-center justify-center rounded-md",
+          "inline-flex h-7 w-7 items-center justify-center rounded-md cursor-pointer",
           "text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-40"
@@ -30,7 +30,7 @@ export function MiniPagination({ page, hasMore, onPageChange }: MiniPaginationPr
       </button>
 
       <span className="text-xs tabular-nums text-muted-foreground">
-        Page {page + 1}
+        Page {page}
       </span>
 
       <button
@@ -38,7 +38,7 @@ export function MiniPagination({ page, hasMore, onPageChange }: MiniPaginationPr
         disabled={!hasMore}
         aria-label="Next page"
         className={cn(
-          "inline-flex h-7 w-7 items-center justify-center rounded-md",
+          "inline-flex h-7 w-7 items-center justify-center rounded-md cursor-pointer",
           "text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-40"

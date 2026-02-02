@@ -7,9 +7,9 @@ export async function GET(request: Request) {
 
     const q = searchParams.get("q")?.trim()
     const platforms = searchParams.get("platforms") ?? undefined
-    const page = parseInt(searchParams.get("page") ?? "0")
+    const page = parseInt(searchParams.get("page") ?? "1")
     const perPage = parseInt(searchParams.get("per_page") ?? "9")
-    const sort = searchParams.get("sort") ?? "stars"
+    const sort = searchParams.get("sort") ?? "rank"
 
     if (!q) {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       language: r.language,
       rank: r.rank,
       versions: r.versions ?? [],
-    }))
+    })).sort((a, b) => b.stars - a.stars)
 
     return NextResponse.json({ data })
   } catch (error) {

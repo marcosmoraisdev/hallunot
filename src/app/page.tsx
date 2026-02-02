@@ -28,15 +28,15 @@ export default function Home() {
 
   const [selectedLibrary, setSelectedLibrary] = useState<{ name: string; platform: string } | null>(null)
   const [selectedLlmName, setSelectedLlmName] = useState("")
-  const [libraryPage, setLibraryPage] = useState(0)
+  const [libraryPage, setLibraryPage] = useState(1)
   const [hasMoreLibraries, setHasMoreLibraries] = useState(false)
   const [noMoreMessage, setNoMoreMessage] = useState("")
   const [currentSearchParams, setCurrentSearchParams] = useState<{ platform: string; query: string } | null>(null)
 
   const handleSearch = useCallback(
-    async (params: { platform: string; query: string }, page = 0) => {
-      // Clear downstream state only on new search (page 0)
-      if (page === 0) {
+    async (params: { platform: string; query: string }, page = 1) => {
+      // Clear downstream state only on new search (page 1)
+      if (page === 1) {
         setSelectedLibrary(null)
         setSelectedLlmName("")
         setNoMoreMessage("")

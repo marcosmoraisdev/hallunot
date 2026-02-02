@@ -33,7 +33,7 @@ export function SearchResults({
   loading,
   onSelectLibrary,
   selectedName,
-  page = 0,
+  page = 1,
   hasMore = false,
   onPageChange,
   noMoreMessage,
