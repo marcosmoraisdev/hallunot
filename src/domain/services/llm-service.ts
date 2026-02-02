@@ -160,7 +160,6 @@ export function filterAndPaginateLlms(
 
   // Calculate pagination
   const total = allModels.length
-  const totalPages = Math.ceil(total / perPage)
   const startIndex = page * perPage
   const endIndex = startIndex + perPage
 
@@ -172,7 +171,6 @@ export function filterAndPaginateLlms(
     page,
     perPage,
     total,
-    totalPages,
   }
 
   // Transform to response types

@@ -1,7 +1,7 @@
 export interface LlmProvider {
   id: string
   name: string
-  env: string
+  env: string[]
   npm: string
   api: string
   doc: string
@@ -13,25 +13,27 @@ export interface LlmModel {
   providerId: string
   name: string
   family: string
-  releaseDate: string
-  lastUpdated: string
-  knowledgeCutoff: string
-  reasoning: boolean
-  toolCall: boolean
-  attachment: boolean
-  structuredOutput: boolean
-  temperature: number
-  modalities: string[]
-  limit: LlmModelLimit
-  cost: LlmModelCost
-}
-
-export interface LlmModelLimit {
-  context: number
-  output: number
-}
-
-export interface LlmModelCost {
-  input: number
-  output: number
+  releaseDate?: string
+  lastUpdated?: string
+  knowledgeCutoff?: string
+  reasoning?: boolean
+  toolCall?: boolean
+  attachment?: boolean
+  structuredOutput?: boolean
+  temperature?: boolean
+  modalities?: {
+    input: string[]
+    output: string[]
+  }
+  limit?: {
+    context?: number
+    output?: number
+  }
+  cost?: {
+    input?: number
+    output?: number
+    reasoning?: number
+    cacheRead?: number
+    cacheWrite?: number
+  }
 }

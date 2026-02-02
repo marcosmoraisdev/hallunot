@@ -5,8 +5,6 @@
  * for the scoring use case. Cost and other non-scoring fields are excluded.
  */
 
-import type { LlmModelLimit } from "./llm"
-
 /**
  * Provider information for frontend display
  */
@@ -27,11 +25,17 @@ export interface LlmModelResponse {
   providerName: string
   name: string
   family: string
-  knowledgeCutoff: string
-  reasoning: boolean
-  toolCall: boolean
-  modalities: string[]
-  limit: LlmModelLimit
+  knowledgeCutoff?: string
+  reasoning?: boolean
+  toolCall?: boolean
+  modalities?: {
+    input: string[]
+    output: string[]
+  }
+  limit?: {
+    context?: number
+    output?: number
+  }
 }
 
 /**
@@ -41,7 +45,6 @@ export interface PaginationMeta {
   page: number
   perPage: number
   total: number
-  totalPages: number
 }
 
 /**
