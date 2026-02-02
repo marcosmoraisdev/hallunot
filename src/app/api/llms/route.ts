@@ -1,7 +1,12 @@
 // src/app/api/llms/route.ts
 import { NextResponse } from "next/server"
-import { getAllLlms } from "@/data/llms"
+import { fetchAllProviders } from "@/infrastructure/adapters/models-dev"
+import { filterAndPaginateLlms } from "@/domain/services/llm-service"
 import { logger } from "@/lib/logger"
+
+const DEFAULT_PAGE = 0
+const DEFAULT_PER_PAGE = 20
+const MAX_PER_PAGE = 100
 
 export async function GET(request: Request) {
   const log = logger.child({ route: "/api/llms" })
@@ -9,37 +14,34 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get("search")?.toLowerCase().trim()
-    const page = parseInt(searchParams.get("page") ?? "1")
-    const perPage = parseInt(searchParams.get("per_page") ?? "9")
 
-    let llms = getAllLlms()
+    // Parse query parameters
+    const provider = searchParams.get("provider") ?? undefined
+    const search = searchParams.get("q") ?? undefined
+    const page = Math.max(0, parseInt(searchParams.get("page") ?? String(DEFAULT_PAGE), 10))
+    const perPage = Math.min(
+      MAX_PER_PAGE,
+      Math.max(1, parseInt(searchParams.get("per_page") ?? String(DEFAULT_PER_PAGE), 10))
+    )
 
-    // Filter by search term if provided
-    if (search) {
-      llms = llms.filter(
-        (llm) =>
-          llm.name.toLowerCase().includes(search) ||
-          llm.provider.toLowerCase().includes(search)
-      )
-    }
+    log.info({ provider, search, page, perPage }, "parsed query params")
 
-    const total = llms.length
-    const totalPages = Math.ceil(total / perPage)
-    const start = (page - 1) * perPage
-    const paginatedLlms = llms.slice(start, start + perPage)
+    // Fetch all providers from external API
+    const providers = await fetchAllProviders()
 
-    log.info({ count: paginatedLlms.length, page, totalPages }, "returning LLMs")
+    // Filter and paginate using domain service
+    const result = filterAndPaginateLlms(
+      providers,
+      { provider, search },
+      { page, perPage }
+    )
 
-    return NextResponse.json({
-      data: paginatedLlms,
-      pagination: {
-        page,
-        perPage,
-        total,
-        totalPages,
-      },
-    })
+    log.info(
+      { modelCount: result.models.length, total: result.pagination.total, page },
+      "returning LLMs"
+    )
+
+    return NextResponse.json(result)
   } catch (err) {
     log.error({ err }, "failed to get LLMs")
     return NextResponse.json(
