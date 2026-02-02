@@ -120,7 +120,7 @@ Always display the disclaimer: _"This score is heuristic and aims to reduce erro
 - Use TypeScript, type-safe code.
 - Components: small, single-responsibility, no business logic.
 - Domain layer: pure TypeScript, no framework imports, 100% unit-testable.
-- Tests: unit tests for domain services (score logic is the priority).
+- Tests: unit tests for domain services (score logic is the priority). **Do NOT create tests for frontend components** — only test backend/domain logic.
 - No premature abstractions — keep it flat until complexity demands otherwise.
 - Use `context7` MCP server when looking up library version information during development.
 

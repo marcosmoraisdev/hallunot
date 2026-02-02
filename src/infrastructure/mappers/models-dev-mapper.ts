@@ -14,8 +14,11 @@ export function mapModel(
   modelId: string,
   dto: ModelsDevModelDTO
 ): LlmModel {
+  // Create a unique ID by combining provider and model to avoid duplicates
+  // since the same model ID can appear across multiple providers
+  const baseId = dto.id || modelId
   return {
-    id: dto.id || modelId,
+    id: `${providerId}/${baseId}`,
     providerId,
     name: dto.name,
     family: dto.family ?? "",

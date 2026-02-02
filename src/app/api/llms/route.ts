@@ -4,7 +4,7 @@ import { fetchAllProviders } from "@/infrastructure/adapters/models-dev"
 import { filterAndPaginateLlms } from "@/domain/services/llm-service"
 import { logger } from "@/lib/logger"
 
-const DEFAULT_PAGE = 0
+const DEFAULT_PAGE = 1
 const DEFAULT_PER_PAGE = 20
 const MAX_PER_PAGE = 100
 
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     // Parse query parameters
     const provider = searchParams.get("provider") ?? undefined
     const search = searchParams.get("q") ?? undefined
-    const page = Math.max(0, parseInt(searchParams.get("page") ?? String(DEFAULT_PAGE), 10))
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? String(DEFAULT_PAGE), 10))
     const perPage = Math.min(
       MAX_PER_PAGE,
       Math.max(1, parseInt(searchParams.get("per_page") ?? String(DEFAULT_PER_PAGE), 10))

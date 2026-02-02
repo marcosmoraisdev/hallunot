@@ -20,7 +20,7 @@ export interface LlmFilters {
  * Pagination parameters
  */
 export interface PaginationParams {
-  /** Page number (0-indexed) */
+  /** Page number (1-indexed, first page = 1) */
   page: number
   /** Number of items per page */
   perPage: number
@@ -158,9 +158,10 @@ export function filterAndPaginateLlms(
     allModels = allModels.filter((model) => modelMatchesSearch(model, search))
   }
 
-  // Calculate pagination
+  // Calculate pagination (1-indexed)
   const total = allModels.length
-  const startIndex = page * perPage
+  const totalPages = Math.ceil(total / perPage)
+  const startIndex = (page - 1) * perPage
   const endIndex = startIndex + perPage
 
   // Slice models for current page
@@ -171,6 +172,7 @@ export function filterAndPaginateLlms(
     page,
     perPage,
     total,
+    totalPages,
   }
 
   // Transform to response types

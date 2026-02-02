@@ -7,17 +7,29 @@ interface MiniPaginationProps {
   page: number
   hasMore: boolean
   onPageChange: (page: number) => void
+  totalPages?: number
 }
 
-export function MiniPagination({ page, hasMore, onPageChange }: MiniPaginationProps) {
-  // Don't show pagination if on first page with no more results
-  if (page === 0 && !hasMore) return null
+export function MiniPagination({
+  page,
+  hasMore,
+  onPageChange,
+  totalPages,
+}: MiniPaginationProps) {
+  const isDeterministic = totalPages !== undefined
+
+  // Hide when trivial
+  if (isDeterministic && totalPages <= 1) return null
+  if (!isDeterministic && page === 1 && !hasMore) return null
+
+  const canGoPrev = page > 1
+  const canGoNext = isDeterministic ? page < totalPages : hasMore
 
   return (
     <div className="flex items-center justify-center gap-3 pt-4">
       <button
         onClick={() => onPageChange(page - 1)}
-        disabled={page === 1}
+        disabled={!canGoPrev}
         aria-label="Previous page"
         className={cn(
           "inline-flex h-7 w-7 items-center justify-center rounded-md cursor-pointer",
@@ -29,13 +41,19 @@ export function MiniPagination({ page, hasMore, onPageChange }: MiniPaginationPr
         <ChevronLeft className="h-4 w-4" />
       </button>
 
-      <span className="text-xs tabular-nums text-muted-foreground">
-        Page {page}
-      </span>
+      {isDeterministic ? (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {page} / {totalPages}
+        </span>
+      ) : (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          Page {page}
+        </span>
+      )}
 
       <button
         onClick={() => onPageChange(page + 1)}
-        disabled={!hasMore}
+        disabled={!canGoNext}
         aria-label="Next page"
         className={cn(
           "inline-flex h-7 w-7 items-center justify-center rounded-md cursor-pointer",

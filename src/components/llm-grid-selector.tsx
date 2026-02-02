@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { SearchInput } from "./search-input"
+import { LlmSearchBar } from "./llm-search-bar"
 import { LlmCard } from "./llm-card"
 import { MiniPagination } from "./mini-pagination"
 import type { LlmModelResponse } from "@/domain/models"
@@ -19,68 +19,74 @@ export function LlmGridSelector({
 }: LlmGridSelectorProps) {
   const [llms, setLlms] = useState<LlmModelResponse[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState("")
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [totalPages, setTotalPages] = useState<number | undefined>()
+  const [currentFilters, setCurrentFilters] = useState<{ provider: string; query: string }>({
+    provider: "",
+    query: "",
+  })
 
-  const fetchLlms = useCallback(async (searchTerm: string, pageNum: number) => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: String(pageNum),
-        per_page: "9",
-      })
-      if (searchTerm) {
-        params.set("search", searchTerm)
+  const fetchLlms = useCallback(
+    async (filters: { provider: string; query: string }, pageNum: number) => {
+      setLoading(true)
+      try {
+        const params = new URLSearchParams({
+          page: String(pageNum),
+          per_page: "9",
+        })
+        if (filters.query) {
+          params.set("q", filters.query)
+        }
+        if (filters.provider) {
+          params.set("provider", filters.provider)
+        }
+
+        const res = await fetch(`/api/llms?${params.toString()}`)
+        const json = await res.json()
+        const models = json.models ?? []
+        setLlms(models)
+        setTotalPages(json.pagination?.totalPages)
+        setHasMore(models.length === 9)
+      } catch (err) {
+        console.error("Failed to fetch LLMs:", err)
+        setLlms([])
+        setTotalPages(undefined)
+        setHasMore(false)
+      } finally {
+        setLoading(false)
       }
-
-      const res = await fetch(`/api/llms?${params.toString()}`)
-      const json = await res.json()
-      const models = json.models ?? []
-      setLlms(models)
-      // Determine if there are more results
-      setHasMore(models.length === 9)
-    } catch (err) {
-      console.error("Failed to fetch LLMs:", err)
-      setLlms([])
-      setHasMore(false)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    },
+    []
+  )
 
   // Initial fetch
   useEffect(() => {
-    fetchLlms("", 0)
+    fetchLlms({ provider: "", query: "" }, 1)
   }, [fetchLlms])
 
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(0)
-      fetchLlms(search, 0)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [search, fetchLlms])
+  const handleSearch = useCallback(
+    (params: { provider: string; query: string }) => {
+      setCurrentFilters(params)
+      setPage(1)
+      fetchLlms(params, 1)
+    },
+    [fetchLlms]
+  )
 
   const handlePageChange = useCallback(
     (newPage: number) => {
       setPage(newPage)
-      fetchLlms(search, newPage)
+      fetchLlms(currentFilters, newPage)
     },
-    [search, fetchLlms]
+    [currentFilters, fetchLlms]
   )
 
   return (
     <div className={disabled ? "pointer-events-none opacity-50" : undefined}>
-      {/* Search input */}
+      {/* Search bar with provider dropdown */}
       <div className="mb-4">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search LLMs..."
-          disabled={disabled}
-        />
+        <LlmSearchBar onSearch={handleSearch} disabled={disabled} />
       </div>
 
       {/* Loading state */}
@@ -112,6 +118,7 @@ export function LlmGridSelector({
           <MiniPagination
             page={page}
             hasMore={hasMore}
+            totalPages={totalPages}
             onPageChange={handlePageChange}
           />
         </div>
@@ -121,7 +128,7 @@ export function LlmGridSelector({
       {!loading && llms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No LLMs found matching &quot;{search}&quot;
+            No LLMs found. Try a different search or provider.
           </p>
         </div>
       )}
