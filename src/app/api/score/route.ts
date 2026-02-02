@@ -1,24 +1,26 @@
 import { NextResponse } from "next/server"
-import { findLlmByName } from "@/data/llms"
+import { fetchAllProviders } from "@/infrastructure/adapters/models-dev"
+import { findModelById } from "@/domain/services/llm-service"
 import { fetchProjectVersions } from "@/infrastructure/adapters/libraries-io"
 import { computeScore } from "@/domain/services/scoring"
 import { detectBreakingChanges } from "@/domain/services/breaking-changes"
 import { groupVersionsIntoBuckets } from "@/domain/services/version-buckets"
 import { logger } from "@/lib/logger"
+import { knowledgeCutoffToMs } from "@/lib/date"
 
 export async function GET(request: Request) {
   const reqStart = Date.now()
   const { searchParams } = new URL(request.url)
 
-  const llmName = searchParams.get("llm")?.trim()
+  const modelId = searchParams.get("llm")?.trim()
   const libraryName = searchParams.get("library")?.trim()
   const platform = searchParams.get("platform")?.trim() || "NPM"
 
-  const log = logger.child({ route: "/api/score", llm: llmName, library: libraryName, platform })
+  const log = logger.child({ route: "/api/score", llm: modelId, library: libraryName, platform })
 
   log.info("incoming request")
 
-  if (!llmName) {
+  if (!modelId) {
     return NextResponse.json(
       { error: "llm query parameter is required" },
       { status: 400 }
@@ -33,12 +35,26 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Find LLM (case-insensitive)
-    const llm = findLlmByName(llmName)
+    // Fetch all providers from models.dev API
+    const providers = await fetchAllProviders()
 
-    if (!llm) {
-      log.warn("LLM not found")
+    // Find the model by ID
+    const model = findModelById(providers, modelId)
+
+    if (!model) {
+      log.warn("LLM model not found")
       return NextResponse.json({ error: "LLM not found" }, { status: 404 })
+    }
+
+    // Convert knowledge cutoff from "YYYY-MM" to Unix ms
+    const cutoffMs = knowledgeCutoffToMs(model.knowledgeCutoff)
+
+    if (!cutoffMs) {
+      log.warn("LLM model has no knowledge cutoff date")
+      return NextResponse.json(
+        { error: "Selected LLM model does not have a knowledge cutoff date" },
+        { status: 400 }
+      )
     }
 
     // Fetch versions from Libraries.io
@@ -61,7 +77,7 @@ export async function GET(request: Request) {
     if (rawVersions.length === 0) {
       return NextResponse.json({
         data: {
-          llm: llm.name,
+          llm: model.name,
           library: libraryName,
           platform,
           buckets: [],
@@ -82,7 +98,7 @@ export async function GET(request: Request) {
       const releaseDate = new Date(v.publishedAt).getTime()
       const { score, risk, reason } = computeScore(
         { releaseDate, breaking: v.breaking },
-        { approxCutoff: llm.approxCutoff }
+        { approxCutoff: cutoffMs }
       )
       return {
         version: v.version,
@@ -104,7 +120,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       data: {
-        llm: llm.name,
+        llm: model.name,
         library: libraryName,
         platform,
         buckets,
