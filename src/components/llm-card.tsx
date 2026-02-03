@@ -8,7 +8,7 @@ import type { LlmModelResponse } from "@/domain/models"
 interface LlmCardProps {
   llm: LlmModelResponse
   isSelected: boolean
-  onSelect: (llmName: string) => void
+  onSelect: (llmId: string, llmName: string) => void
   index: number
 }
 
@@ -21,7 +21,7 @@ export function LlmCard({ llm, isSelected, onSelect, index }: LlmCardProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
-      onClick={() => onSelect(llm.name)}
+      onClick={() => onSelect(llm.id, llm.name)}
       className={cn(
         "group flex cursor-pointer flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all",
         isSelected

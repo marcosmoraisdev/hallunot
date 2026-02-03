@@ -3,50 +3,138 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Calendar, AlertOctagon, FileCode2, ChevronDown, ChevronRight } from "lucide-react"
+import { Calendar, FileCode2, ChevronDown, ChevronRight, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/cn"
 import { ScoreBadge } from "./score-badge"
 import { EmptyState } from "./empty-state"
-import { RISK_LABELS } from "@/domain/services/risk"
+import { RISK_LABELS, classifyRisk } from "@/domain/services/risk"
 import { formatDate } from "@/lib/date"
 import type { RiskLevel } from "@/domain/models"
 
 interface VersionScoresProps {
+  llmId: string
   llmName: string
   libraryName: string
   platform: string
 }
 
-interface ScoredVersion {
+interface DisplayVersion {
   version: string
   releaseDate: number
-  breaking: boolean
-  score: number
+  score: number // 0-100 for display
   risk: RiskLevel
-  reason: string
+  recencyContribution: number
 }
 
 interface VersionBucket {
   major: number
   bestScore: number
-  versions: ScoredVersion[]
+  versions: DisplayVersion[]
 }
 
-export function VersionScores({ llmName, libraryName, platform }: VersionScoresProps) {
+// API response types
+interface LCSVersionScore {
+  version: string
+  releaseDate: string
+  recency: { value: number; weight: number; contribution: number }
+  score: number
+}
+
+interface FSVersionScore {
+  version: string
+  lcs: number
+  lgs: number
+  final: number
+}
+
+interface ScoreAPIResponse {
+  library: string
+  platform: string
+  llm: string
+  LCS: {
+    libraryScore: Record<string, unknown>
+    versions: LCSVersionScore[]
+  }
+  LGS: { score: number }
+  FS: {
+    versions: FSVersionScore[]
+    formula: string
+  }
+}
+
+function parseMajorVersion(version: string): number {
+  const match = version.match(/^(\d+)/)
+  return match ? parseInt(match[1], 10) : 0
+}
+
+function transformToDisplayVersions(
+  lcsVersions: LCSVersionScore[],
+  fsVersions: FSVersionScore[]
+): DisplayVersion[] {
+  // Create a map for quick FS score lookup
+  const fsMap = new Map<string, FSVersionScore>()
+  for (const fs of fsVersions) {
+    fsMap.set(fs.version, fs)
+  }
+
+  return lcsVersions.map((lcs) => {
+    const fs = fsMap.get(lcs.version)
+    // Use final score if available, otherwise use LCS score
+    // Convert from 0-1 to 0-100 for display
+    const scoreNormalized = fs?.final ?? lcs.score
+    const score = Math.round(scoreNormalized * 100)
+    
+    return {
+      version: lcs.version,
+      releaseDate: new Date(lcs.releaseDate).getTime(),
+      score,
+      risk: classifyRisk(score),
+      recencyContribution: lcs.recency.contribution,
+    }
+  })
+}
+
+function groupIntoBuckets(versions: DisplayVersion[]): VersionBucket[] {
+  const bucketMap = new Map<number, DisplayVersion[]>()
+
+  for (const v of versions) {
+    const major = parseMajorVersion(v.version)
+    const existing = bucketMap.get(major) ?? []
+    existing.push(v)
+    bucketMap.set(major, existing)
+  }
+
+  const buckets: VersionBucket[] = []
+  for (const [major, vers] of bucketMap) {
+    // Sort versions by score descending
+    vers.sort((a, b) => b.score - a.score)
+    buckets.push({
+      major,
+      bestScore: vers[0]?.score ?? 0,
+      versions: vers,
+    })
+  }
+
+  // Sort buckets by major version descending (newest first)
+  buckets.sort((a, b) => b.major - a.major)
+
+  return buckets
+}
+
+export function VersionScores({ llmId, llmName, libraryName, platform }: VersionScoresProps) {
   const [buckets, setBuckets] = useState<VersionBucket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedBuckets, setExpandedBuckets] = useState<Set<number>>(new Set())
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state reset for data fetch
     setLoading(true)
     setError(null)
     setBuckets([])
     setExpandedBuckets(new Set())
 
     const params = new URLSearchParams({
-      llm: llmName,
+      llm: llmId,
       library: libraryName,
       platform,
     })
@@ -54,16 +142,28 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
     fetch(`/api/score?${params.toString()}`)
       .then((res) => {
         if (!res.ok) {
-          throw new Error(`Failed to fetch scores: ${res.status}`)
+          return res.json().then((err) => {
+            throw new Error(err.error || `Failed to fetch scores: ${res.status}`)
+          })
         }
         return res.json()
       })
-      .then((json) => {
-        const data = json.data?.buckets ?? []
-        setBuckets(data)
+      .then((json: ScoreAPIResponse) => {
+        const lcsVersions = json.LCS?.versions ?? []
+        const fsVersions = json.FS?.versions ?? []
+        
+        if (lcsVersions.length === 0) {
+          setBuckets([])
+          return
+        }
+
+        const displayVersions = transformToDisplayVersions(lcsVersions, fsVersions)
+        const groupedBuckets = groupIntoBuckets(displayVersions)
+        
+        setBuckets(groupedBuckets)
         // Auto-expand first bucket
-        if (data.length > 0) {
-          setExpandedBuckets(new Set([data[0].major]))
+        if (groupedBuckets.length > 0) {
+          setExpandedBuckets(new Set([groupedBuckets[0].major]))
         }
       })
       .catch((err) => {
@@ -71,7 +171,7 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
         setError(err.message)
       })
       .finally(() => setLoading(false))
-  }, [llmName, libraryName, platform])
+  }, [llmId, libraryName, platform])
 
   const toggleBucket = (major: number) => {
     setExpandedBuckets((prev) => {
@@ -122,6 +222,7 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
     <div className="space-y-3">
       {buckets.map((bucket) => {
         const isExpanded = expandedBuckets.has(bucket.major)
+        const bestRisk = bucket.versions[0]?.risk ?? "medium"
         return (
           <div
             key={bucket.major}
@@ -149,7 +250,7 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
                   ({bucket.versions.length} version{bucket.versions.length !== 1 ? "s" : ""})
                 </span>
               </div>
-              <ScoreBadge score={bucket.bestScore} risk={bucket.versions[0]?.risk ?? "medium"} />
+              <ScoreBadge score={bucket.bestScore} risk={bestRisk} />
             </button>
 
             {/* Bucket content */}
@@ -177,12 +278,6 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
                               v{item.version}
                             </span>
                             <ScoreBadge score={item.score} risk={item.risk} />
-                            {item.breaking && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-risk-high-bg px-2 py-0.5 text-[10px] font-medium text-risk-high">
-                                <AlertOctagon className="h-3 w-3" />
-                                Breaking
-                              </span>
-                            )}
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -192,11 +287,12 @@ export function VersionScores({ llmName, libraryName, platform }: VersionScoresP
                               <Calendar className="h-3 w-3" />
                               {formatDate(item.releaseDate)}
                             </span>
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <TrendingUp className="h-3 w-3" />
+                              Recency: {Math.round(item.recencyContribution * 100)}%
+                            </span>
                           </div>
                         </div>
-                        <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-                          {item.reason}
-                        </p>
                       </div>
                     ))}
                   </div>

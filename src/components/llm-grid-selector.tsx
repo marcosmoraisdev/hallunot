@@ -8,7 +8,7 @@ import type { LlmModelResponse } from "@/domain/models"
 
 interface LlmGridSelectorProps {
   value: string
-  onValueChange: (llmName: string) => void
+  onValueChange: (llmId: string, llmName: string) => void
   disabled?: boolean
 }
 
@@ -109,7 +109,7 @@ export function LlmGridSelector({
               <LlmCard
                 key={llm.id}
                 llm={llm}
-                isSelected={llm.name === value}
+                isSelected={llm.id === value}
                 onSelect={onValueChange}
                 index={i}
               />

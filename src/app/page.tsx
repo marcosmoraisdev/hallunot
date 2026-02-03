@@ -27,7 +27,7 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false)
 
   const [selectedLibrary, setSelectedLibrary] = useState<{ name: string; platform: string } | null>(null)
-  const [selectedLlmName, setSelectedLlmName] = useState("")
+  const [selectedLlm, setSelectedLlm] = useState<{ id: string; name: string } | null>(null)
   const [libraryPage, setLibraryPage] = useState(1)
   const [hasMoreLibraries, setHasMoreLibraries] = useState(false)
   const [noMoreMessage, setNoMoreMessage] = useState("")
@@ -38,7 +38,7 @@ export default function Home() {
       // Clear downstream state only on new search (page 1)
       if (page === 1) {
         setSelectedLibrary(null)
-        setSelectedLlmName("")
+        setSelectedLlm(null)
         setNoMoreMessage("")
       }
       setSearchLoading(true)
@@ -82,11 +82,11 @@ export default function Home() {
 
   const handleSelectLibrary = useCallback((libraryName: string, platform: string) => {
     setSelectedLibrary({ name: libraryName, platform })
-    setSelectedLlmName("") // Reset LLM when library changes
+    setSelectedLlm(null) // Reset LLM when library changes
   }, [])
 
-  const handleSelectLlm = useCallback((llmName: string) => {
-    setSelectedLlmName(llmName)
+  const handleSelectLlm = useCallback((llmId: string, llmName: string) => {
+    setSelectedLlm({ id: llmId, name: llmName })
   }, [])
 
   const handleLibraryPageChange = useCallback((newPage: number) => {
@@ -172,7 +172,7 @@ export default function Home() {
                 subtitle={`Choose which LLM to evaluate with "${selectedLibrary.name}"`}
               />
               <LlmGridSelector
-                value={selectedLlmName}
+                value={selectedLlm?.id ?? ""}
                 onValueChange={handleSelectLlm}
               />
             </motion.section>
@@ -181,7 +181,7 @@ export default function Home() {
 
         {/* Step 4: Version compatibility */}
         <AnimatePresence>
-          {selectedLibrary && selectedLlmName && (
+          {selectedLibrary && selectedLlm && (
             <motion.section
               key="version-section"
               initial="hidden"
@@ -193,10 +193,11 @@ export default function Home() {
               <SectionHeader
                 step={4}
                 title="Version compatibility"
-                subtitle={`Scores for ${selectedLibrary.name} with ${selectedLlmName}`}
+                subtitle={`Scores for ${selectedLibrary.name} with ${selectedLlm.name}`}
               />
               <VersionScores
-                llmName={selectedLlmName}
+                llmId={selectedLlm.id}
+                llmName={selectedLlm.name}
                 libraryName={selectedLibrary.name}
                 platform={selectedLibrary.platform || "NPM"}
               />
