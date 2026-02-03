@@ -19,7 +19,9 @@ export interface LibrariesIoSearchResult {
   repository_url: string | null
   normalized_licenses: string[]
   rank: number
+  keywords: string[]
   latest_release_number: string | null
+  latest_release_published_at: string | null
   latest_stable_release_number: string | null
   latest_stable_release_published_at: string | null
   language: string | null
@@ -37,7 +39,9 @@ export interface LibrariesIoProject {
   repository_url: string | null
   normalized_licenses: string[]
   rank: number
+  keywords: string[]
   latest_release_number: string | null
+  latest_release_published_at: string | null
   latest_stable_release_number: string | null
   latest_stable_release_published_at: string | null
   language: string | null
@@ -118,4 +122,22 @@ export async function fetchProjectVersions(
 
   const project: LibrariesIoProject = await res.json()
   return project.versions ?? []
+}
+
+export async function fetchProject(
+  platform: string,
+  projectName: string
+): Promise<LibrariesIoProject> {
+  const key = getApiKey()
+  const encodedName = encodeURIComponent(projectName)
+  const searchParams = new URLSearchParams({ api_key: key })
+  const url = `${BASE_URL}/${platform}/${encodedName}?${searchParams.toString()}`
+
+  const res = await fetch(url, { next: { revalidate: 300 } })
+
+  if (!res.ok) {
+    throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
+  }
+
+  return res.json()
 }
