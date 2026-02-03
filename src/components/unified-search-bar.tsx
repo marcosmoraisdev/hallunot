@@ -76,7 +76,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
       >
         <Select.Trigger
           className={cn(
-            "flex shrink-0 items-center gap-2 border-r border-border/50 px-3 py-2.5 cursor-pointer", 
+            "flex shrink-0 items-center gap-2 border-r border-border/50 px-3 py-2.5 cursor-pointer",
             "text-sm text-foreground outline-none",
             "hover:bg-muted/50 transition-colors",
             "data-[placeholder]:text-muted-foreground"
@@ -177,7 +177,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
           onClick={handleSearch}
           disabled={isSearchDisabled}
           className={cn(
-            "shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground",
+            "shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground cursor-pointer",
             "transition-colors hover:bg-primary/90",
             "disabled:cursor-not-allowed disabled:opacity-50"
           )}

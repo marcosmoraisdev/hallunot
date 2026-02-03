@@ -15,7 +15,7 @@ interface LlmSearchBarProps {
   autoSearch?: boolean
 }
 
-export function LlmSearchBar({ onSearch, disabled = false, autoSearch = false }: LlmSearchBarProps) {
+export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true }: LlmSearchBarProps) {
   const [providers, setProviders] = useState<LlmProviderResponse[]>([])
   const [providersLoading, setProvidersLoading] = useState(true)
 
@@ -49,10 +49,7 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = false }:
     return () => clearTimeout(timer)
   }, [autoSearch, query, selectedProvider, onSearch])
 
-  const isSearchDisabled = !query.trim() || disabled
-
   const handleSearch = () => {
-    if (isSearchDisabled) return
     onSearch({
       provider: selectedProvider === ALL_PROVIDERS_VALUE ? "" : selectedProvider,
       query: query.trim(),
@@ -202,9 +199,9 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = false }:
         <button
           type="button"
           onClick={handleSearch}
-          disabled={isSearchDisabled}
+          // disabled={isSearchDisabled}
           className={cn(
-            "shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground",
+            "shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground cursor-pointer",
             "transition-colors hover:bg-primary/90",
             "disabled:cursor-not-allowed disabled:opacity-50",
             autoSearch && "hidden"
