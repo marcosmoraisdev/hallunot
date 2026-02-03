@@ -3,20 +3,32 @@ export function msToMonths(ms: number): number {
 }
 
 /**
- * Converts a "YYYY-MM" string to Unix milliseconds.
- * Returns the timestamp for the first day of the month at midnight UTC.
+ * Converts a date string to Unix milliseconds.
+ * Supports formats: "YYYY-MM" and "YYYY-MM-DD"
+ * Returns the timestamp at midnight UTC.
  * Returns undefined if the input is invalid or undefined.
  */
 export function knowledgeCutoffToMs(cutoff: string | undefined): number | undefined {
   if (!cutoff) return undefined
 
-  const match = cutoff.match(/^(\d{4})-(\d{2})$/)
-  if (!match) return undefined
+  // Try YYYY-MM format
+  const monthMatch = cutoff.match(/^(\d{4})-(\d{2})$/)
+  if (monthMatch) {
+    const year = parseInt(monthMatch[1], 10)
+    const month = parseInt(monthMatch[2], 10) - 1 // JS months are 0-indexed
+    return Date.UTC(year, month, 1)
+  }
 
-  const year = parseInt(match[1], 10)
-  const month = parseInt(match[2], 10) - 1 // JS months are 0-indexed
+  // Try YYYY-MM-DD format
+  const dateMatch = cutoff.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (dateMatch) {
+    const year = parseInt(dateMatch[1], 10)
+    const month = parseInt(dateMatch[2], 10) - 1 // JS months are 0-indexed
+    const day = parseInt(dateMatch[3], 10)
+    return Date.UTC(year, month, day)
+  }
 
-  return Date.UTC(year, month, 1)
+  return undefined
 }
 
 export function formatDate(unixMs: number): string {
