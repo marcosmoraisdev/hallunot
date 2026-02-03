@@ -1,0 +1,10 @@
+// src/domain/services/lcs/index.ts
+export * from './types'
+export * from './utils'
+export * from './aggregator'
+export * from './calculator'
+export { StabilityScore } from './components/stability-score'
+export { RecencyRiskScore } from './components/recency-risk-score'
+export { SimplicityScore } from './components/simplicity-score'
+export { PopularityScore } from './components/popularity-score'
+export { LanguageAffinityScore } from './components/language-affinity-score'
