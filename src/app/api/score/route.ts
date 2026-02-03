@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server"
 import { fetchAllProviders } from "@/infrastructure/adapters/models-dev"
 import { findModelById } from "@/domain/services/llm-service"
-import { fetchProjectVersions } from "@/infrastructure/adapters/libraries-io"
-import { computeScore } from "@/domain/services/scoring"
-import { detectBreakingChanges } from "@/domain/services/breaking-changes"
-import { groupVersionsIntoBuckets } from "@/domain/services/version-buckets"
+import { fetchProject } from "@/infrastructure/adapters/libraries-io"
+import { LCSCalculator } from "@/domain/services/lcs"
+import { calculateLGS } from "@/domain/services/lgs"
+import { calculateFinalScores } from "@/domain/services/final-score"
+import { mapToLibraryMetadata, mapToVersionMetadata } from "@/infrastructure/mappers/library-metadata-mapper"
 import { logger } from "@/lib/logger"
 import { knowledgeCutoffToMs } from "@/lib/date"
+import type { ScoreResponse, VersionScore, LCSOutput } from "@/domain/services/lcs/types"
 
 export async function GET(request: Request) {
   const reqStart = Date.now()
@@ -57,75 +59,98 @@ export async function GET(request: Request) {
       )
     }
 
-    // Fetch versions from Libraries.io
-    let rawVersions
+    // Fetch project from Libraries.io
+    let project
     const fetchStart = Date.now()
     try {
-      rawVersions = await fetchProjectVersions(platform, libraryName)
+      project = await fetchProject(platform, libraryName)
       log.info(
-        { fetchDurationMs: Date.now() - fetchStart, versionCount: rawVersions.length },
-        "fetched versions from Libraries.io"
+        { fetchDurationMs: Date.now() - fetchStart, versionCount: project.versions?.length ?? 0 },
+        "fetched project from Libraries.io"
       )
     } catch (err) {
-      log.error({ err, fetchDurationMs: Date.now() - fetchStart }, "failed to fetch versions from Libraries.io")
+      log.error({ err, fetchDurationMs: Date.now() - fetchStart }, "failed to fetch project from Libraries.io")
       return NextResponse.json(
-        { error: "Failed to fetch library versions from external source" },
+        { error: "Failed to fetch library from external source" },
         { status: 502 }
       )
     }
 
-    if (rawVersions.length === 0) {
-      return NextResponse.json({
-        data: {
-          llm: model.name,
-          library: libraryName,
-          platform,
-          buckets: [],
+    // Map to domain types
+    const libraryMetadata = mapToLibraryMetadata(project)
+    const versions = mapToVersionMetadata(project.versions ?? [])
+
+    if (versions.length === 0) {
+      const emptyResponse: ScoreResponse = {
+        library: libraryName,
+        platform,
+        llm: model.name,
+        LCS: {
+          libraryScore: {
+            stability: { value: 0, weight: 0.30, contribution: 0 },
+            simplicity: { value: 0, weight: 0.15, contribution: 0 },
+            popularity: { value: 0, weight: 0.20, contribution: 0 },
+            language: { value: 0, weight: 0.10, contribution: 0 },
+          },
+          versions: [],
         },
-      })
+        LGS: { score: 1.0, breakdown: null },
+        FS: { versions: [], formula: "LCS × LGS" },
+      }
+      return NextResponse.json(emptyResponse)
     }
 
-    // Detect breaking changes
-    const versionsWithBreaking = detectBreakingChanges(
-      rawVersions.map((v) => ({
-        version: v.number,
-        publishedAt: v.published_at,
-      }))
-    )
+    // Calculate LCS
+    const calculator = new LCSCalculator()
+    const llmMetadata = {
+      id: modelId,
+      name: model.name,
+      cutoffDate: new Date(cutoffMs),
+    }
 
-    // Score each version
-    const scoredVersions = versionsWithBreaking.map((v) => {
-      const releaseDate = new Date(v.publishedAt).getTime()
-      const { score, risk, reason } = computeScore(
-        { releaseDate, breaking: v.breaking },
-        { approxCutoff: cutoffMs }
-      )
-      return {
-        version: v.version,
-        releaseDate,
-        breaking: v.breaking,
-        score,
-        risk,
-        reason,
-      }
-    })
+    const lcsResults = calculator.calculateForLibrary(libraryMetadata, versions, llmMetadata)
 
-    // Group into buckets
-    const buckets = groupVersionsIntoBuckets(scoredVersions)
+    // Build LCS output
+    const libraryScore = lcsResults[0]?.libraryBreakdown ?? {
+      stability: { value: 0, weight: 0.30, contribution: 0 },
+      simplicity: { value: 0, weight: 0.15, contribution: 0 },
+      popularity: { value: 0, weight: 0.20, contribution: 0 },
+      language: { value: 0, weight: 0.10, contribution: 0 },
+    }
+
+    const versionScores: VersionScore[] = lcsResults.map((r) => ({
+      version: r.version,
+      releaseDate: r.releaseDate,
+      recency: r.recencyBreakdown,
+      score: r.score,
+    }))
+
+    const lcsOutput: LCSOutput = {
+      libraryScore,
+      versions: versionScores,
+    }
+
+    // Calculate LGS (placeholder = 1.0)
+    const lgsOutput = calculateLGS(modelId)
+
+    // Calculate Final Scores
+    const fsOutput = calculateFinalScores(versionScores, lgsOutput.score)
+
+    const response: ScoreResponse = {
+      library: libraryName,
+      platform,
+      llm: model.name,
+      LCS: lcsOutput,
+      LGS: lgsOutput,
+      FS: fsOutput,
+    }
 
     log.info(
-      { totalDurationMs: Date.now() - reqStart, bucketCount: buckets.length, versionCount: scoredVersions.length },
+      { totalDurationMs: Date.now() - reqStart, versionCount: versions.length },
       "scoring complete"
     )
 
-    return NextResponse.json({
-      data: {
-        llm: model.name,
-        library: libraryName,
-        platform,
-        buckets,
-      },
-    })
+    return NextResponse.json(response)
   } catch (err) {
     log.error({ err, totalDurationMs: Date.now() - reqStart }, "unexpected error computing scores")
     return NextResponse.json(
