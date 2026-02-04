@@ -78,11 +78,21 @@ export interface LCSOutput {
 }
 
 /**
+ * Breakdown of LGS score components.
+ */
+export interface LGSScoreBreakdown {
+  capability: ComponentResult
+  limit: ComponentResult
+  recency: ComponentResult
+  openness: ComponentResult
+}
+
+/**
  * LGS (LLM Generic Score) output structure.
  */
 export interface LGSOutput {
   score: number
-  breakdown: Record<string, number> | null
+  breakdown: LGSScoreBreakdown | null
 }
 
 /**
