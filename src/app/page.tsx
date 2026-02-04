@@ -1,7 +1,7 @@
 // src/app/page.tsx
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Github, Linkedin, SearchX } from "lucide-react"
 import { Header } from "@/components/header"
@@ -14,6 +14,7 @@ import { LlmGridSelector } from "@/components/llm-grid-selector"
 import { VersionScores } from "@/components/version-scores"
 import { Disclaimer } from "@/components/disclaimer"
 import { EmptyState } from "@/components/empty-state"
+import type { LlmProviderResponse } from "@/domain/models"
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },
@@ -26,7 +27,21 @@ export default function Home() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
+  const [providers, setProviders] = useState<LlmProviderResponse[]>([])
+  const [providersLoading, setProvidersLoading] = useState(true)
+  const providersFetched = useRef(false)
   const [selectedLibrary, setSelectedLibrary] = useState<{ name: string; platform: string } | null>(null)
+
+  useEffect(() => {
+    if (providersFetched.current) return
+    providersFetched.current = true
+    fetch("/api/llms?per_page=1")
+      .then((res) => res.json())
+      .then((json) => setProviders(json.providers ?? []))
+      .catch(console.error)
+      .finally(() => setProvidersLoading(false))
+  }, [])
+
   const [selectedLlm, setSelectedLlm] = useState<{ id: string; name: string } | null>(null)
   const [libraryPage, setLibraryPage] = useState(1)
   const [hasMoreLibraries, setHasMoreLibraries] = useState(false)
@@ -90,10 +105,16 @@ export default function Home() {
   }, [])
 
   const handleLibraryPageChange = useCallback((newPage: number) => {
+    setSelectedLibrary(null)
+    setSelectedLlm(null)
     if (currentSearchParams) {
       handleSearch(currentSearchParams, newPage)
     }
   }, [currentSearchParams, handleSearch])
+
+  const handleLlmPageChange = useCallback(() => {
+    setSelectedLlm(null)
+  }, [])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -174,6 +195,9 @@ export default function Home() {
               <LlmGridSelector
                 value={selectedLlm?.id ?? ""}
                 onValueChange={handleSelectLlm}
+                onPageChange={handleLlmPageChange}
+                providers={providers}
+                providersLoading={providersLoading}
               />
             </motion.section>
           )}

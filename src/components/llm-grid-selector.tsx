@@ -1,20 +1,26 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { LlmSearchBar } from "./llm-search-bar"
 import { LlmCard } from "./llm-card"
 import { MiniPagination } from "./mini-pagination"
-import type { LlmModelResponse } from "@/domain/models"
+import type { LlmModelResponse, LlmProviderResponse } from "@/domain/models"
 
 interface LlmGridSelectorProps {
   value: string
   onValueChange: (llmId: string, llmName: string) => void
+  onPageChange?: () => void
+  providers: LlmProviderResponse[]
+  providersLoading: boolean
   disabled?: boolean
 }
 
 export function LlmGridSelector({
   value,
   onValueChange,
+  onPageChange,
+  providers,
+  providersLoading,
   disabled = false,
 }: LlmGridSelectorProps) {
   const [llms, setLlms] = useState<LlmModelResponse[]>([])
@@ -60,11 +66,6 @@ export function LlmGridSelector({
     []
   )
 
-  // Initial fetch
-  useEffect(() => {
-    fetchLlms({ provider: "", query: "" }, 1)
-  }, [fetchLlms])
-
   const handleSearch = useCallback(
     (params: { provider: string; query: string }) => {
       setCurrentFilters(params)
@@ -77,16 +78,22 @@ export function LlmGridSelector({
   const handlePageChange = useCallback(
     (newPage: number) => {
       setPage(newPage)
+      onPageChange?.()
       fetchLlms(currentFilters, newPage)
     },
-    [currentFilters, fetchLlms]
+    [currentFilters, fetchLlms, onPageChange]
   )
 
   return (
     <div className={disabled ? "pointer-events-none opacity-50" : undefined}>
       {/* Search bar with provider dropdown */}
       <div className="mb-4">
-        <LlmSearchBar onSearch={handleSearch} disabled={disabled} />
+        <LlmSearchBar
+          onSearch={handleSearch}
+          disabled={disabled}
+          providers={providers}
+          providersLoading={providersLoading}
+        />
       </div>
 
       {/* Loading state */}

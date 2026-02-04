@@ -1,7 +1,7 @@
 // src/components/version-scores.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Calendar, FileCode2, ChevronDown, ChevronRight, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/cn"
@@ -106,8 +106,8 @@ function groupIntoBuckets(versions: DisplayVersion[]): VersionBucket[] {
 
   const buckets: VersionBucket[] = []
   for (const [major, vers] of bucketMap) {
-    // Sort versions by score descending
-    vers.sort((a, b) => b.score - a.score)
+    // Sort versions by release date descending
+    vers.sort((a, b) => b.releaseDate - a.releaseDate)
     buckets.push({
       major,
       bestScore: vers[0]?.score ?? 0,
@@ -126,8 +126,13 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedBuckets, setExpandedBuckets] = useState<Set<number>>(new Set())
+  const lastFetchKey = useRef("")
 
   useEffect(() => {
+    const key = `${llmId}-${libraryName}-${platform}`
+    if (lastFetchKey.current === key) return
+    lastFetchKey.current = key
+
     setLoading(true)
     setError(null)
     setBuckets([])
@@ -149,9 +154,11 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
         return res.json()
       })
       .then((json: ScoreAPIResponse) => {
+        if (lastFetchKey.current !== key) return
+
         const lcsVersions = json.LCS?.versions ?? []
         const fsVersions = json.FS?.versions ?? []
-        
+
         if (lcsVersions.length === 0) {
           setBuckets([])
           return
@@ -159,7 +166,7 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
 
         const displayVersions = transformToDisplayVersions(lcsVersions, fsVersions)
         const groupedBuckets = groupIntoBuckets(displayVersions)
-        
+
         setBuckets(groupedBuckets)
         // Auto-expand first bucket
         if (groupedBuckets.length > 0) {
@@ -167,10 +174,14 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
         }
       })
       .catch((err) => {
+        if (lastFetchKey.current !== key) return
         console.error(err)
         setError(err.message)
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (lastFetchKey.current !== key) return
+        setLoading(false)
+      })
   }, [llmId, libraryName, platform])
 
   const toggleBucket = (major: number) => {

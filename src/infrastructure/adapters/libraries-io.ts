@@ -113,13 +113,6 @@ export async function searchLibraries(
   const results: LibrariesIoSearchResult[] = await res.json()
   logger.info({ query: params.q, resultCount: results.length }, "Libraries.io search completed")
 
-  results.sort((a, b) => {
-    const simA = nameSimilarity(a.name, params.q)
-    const simB = nameSimilarity(b.name, params.q)
-    if (simA !== simB) return simB - simA
-    return b.rank - a.rank
-  })
-
   return results
 }
 

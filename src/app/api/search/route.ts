@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const platforms = searchParams.get("platforms") ?? undefined
     const page = parseInt(searchParams.get("page") ?? "1")
     const perPage = parseInt(searchParams.get("per_page") ?? "9")
-    const sort = searchParams.get("sort") ?? "rank"
+    const sort = searchParams.get("sort") ?? undefined
 
     if (!q) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       platforms,
       page,
       per_page: perPage,
-      sort,
+      sort
     })
 
     const data = results.map((r) => ({

@@ -13,12 +13,11 @@ interface LlmSearchBarProps {
   disabled?: boolean
   /** When true, triggers onSearch automatically after typing (debounced) instead of requiring button click */
   autoSearch?: boolean
+  providers: LlmProviderResponse[]
+  providersLoading: boolean
 }
 
-export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true }: LlmSearchBarProps) {
-  const [providers, setProviders] = useState<LlmProviderResponse[]>([])
-  const [providersLoading, setProvidersLoading] = useState(true)
-
+export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, providers, providersLoading }: LlmSearchBarProps) {
   const [selectedProvider, setSelectedProvider] = useState(ALL_PROVIDERS_VALUE)
   const [query, setQuery] = useState("")
   const [providerFilter, setProviderFilter] = useState("")
@@ -26,14 +25,6 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true }: 
   const filteredProviders = providers.filter((p) =>
     p.name.toLowerCase().includes(providerFilter.toLowerCase())
   )
-
-  useEffect(() => {
-    fetch("/api/llms?per_page=1")
-      .then((res) => res.json())
-      .then((json) => setProviders(json.providers ?? []))
-      .catch(console.error)
-      .finally(() => setProvidersLoading(false))
-  }, [])
 
   // Auto-search effect with debounce
   useEffect(() => {
