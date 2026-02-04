@@ -83,7 +83,7 @@ function transformToDisplayVersions(
     // Convert from 0-1 to 0-100 for display
     const scoreNormalized = fs?.final ?? lcs.score
     const score = Math.round(scoreNormalized * 100)
-    
+
     return {
       version: lcs.version,
       releaseDate: new Date(lcs.releaseDate).getTime(),
@@ -168,10 +168,6 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
         const groupedBuckets = groupIntoBuckets(displayVersions)
 
         setBuckets(groupedBuckets)
-        // Auto-expand first bucket
-        if (groupedBuckets.length > 0) {
-          setExpandedBuckets(new Set([groupedBuckets[0].major]))
-        }
       })
       .catch((err) => {
         if (lastFetchKey.current !== key) return
@@ -237,14 +233,14 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
         return (
           <div
             key={bucket.major}
-            className="rounded-xl border border-border/50 bg-card overflow-hidden"
+            className="rounded-xl border border-border/50 bg-card overflow-hidden cursor-pointer"
           >
             {/* Bucket header */}
             <button
               type="button"
               onClick={() => toggleBucket(bucket.major)}
               className={cn(
-                "flex w-full items-center justify-between px-4 py-3",
+                "flex w-full items-center justify-between px-4 py-3 cursor-pointer",
                 "hover:bg-muted/50 transition-colors"
               )}
             >
