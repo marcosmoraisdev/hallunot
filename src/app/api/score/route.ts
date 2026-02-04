@@ -4,6 +4,7 @@ import { findModelById } from "@/domain/services/llm-service"
 import { fetchProject } from "@/infrastructure/adapters/libraries-io"
 import { LCSCalculator } from "@/domain/services/lcs"
 import { calculateLGS } from "@/domain/services/lgs"
+import type { LGSContext } from "@/domain/services/lgs/types"
 import { calculateFinalScores } from "@/domain/services/final-score"
 import { mapToLibraryMetadata, mapToVersionMetadata } from "@/infrastructure/mappers/library-metadata-mapper"
 import { logger } from "@/lib/logger"
@@ -47,6 +48,10 @@ export async function GET(request: Request) {
       log.warn("LLM model not found")
       return NextResponse.json({ error: "LLM not found" }, { status: 404 })
     }
+
+    // Extract provider info for LGS context
+    const providerIdFromModel = modelId.split('/')[0]
+    const provider = providers.find((p) => p.id === providerIdFromModel)
 
     // Convert knowledge cutoff from "YYYY-MM" to Unix ms
     const cutoffMs = knowledgeCutoffToMs(model.knowledgeCutoff)
@@ -94,7 +99,7 @@ export async function GET(request: Request) {
           },
           versions: [],
         },
-        LGS: { score: 1.0, breakdown: null },
+        LGS: { score: 0, breakdown: null },
         FS: { versions: [], formula: "LCS × LGS" },
       }
       return NextResponse.json(emptyResponse)
@@ -130,8 +135,23 @@ export async function GET(request: Request) {
       versions: versionScores,
     }
 
-    // Calculate LGS (placeholder = 1.0)
-    const lgsOutput = calculateLGS(modelId)
+    // Calculate LGS
+    const lgsContext: LGSContext = {
+      model: {
+        reasoning: model.reasoning ?? false,
+        toolCall: model.toolCall ?? false,
+        structuredOutput: model.structuredOutput ?? false,
+        attachment: model.attachment ?? false,
+        modalities: model.modalities ?? { input: ['text'], output: ['text'] },
+        contextLimit: model.limit?.context ?? 0,
+        outputLimit: model.limit?.output ?? 0,
+        knowledgeCutoff: cutoffMs ? new Date(cutoffMs) : undefined,
+        lastUpdated: model.lastUpdated ? new Date(model.lastUpdated) : undefined,
+        openWeights: model.openWeights ?? false,
+        apiCompatibility: provider?.npm ?? '',
+      },
+    }
+    const lgsOutput = calculateLGS(lgsContext)
 
     // Calculate Final Scores
     const fsOutput = calculateFinalScores(versionScores, lgsOutput.score)
