@@ -30,6 +30,7 @@ export function mapModel(
     attachment: dto.attachment,
     structuredOutput: dto.structured_output,
     temperature: dto.temperature,
+    openWeights: dto.open_weights,
     modalities: dto.modalities,
     limit: dto.limit,
     cost: dto.cost

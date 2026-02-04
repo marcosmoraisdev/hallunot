@@ -21,6 +21,7 @@ export interface LlmModel {
   attachment?: boolean
   structuredOutput?: boolean
   temperature?: boolean
+  openWeights?: boolean
   modalities?: {
     input: string[]
     output: string[]
