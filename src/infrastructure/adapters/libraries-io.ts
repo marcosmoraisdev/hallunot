@@ -59,6 +59,9 @@ export interface SearchLibrariesParams {
   sort?: string
 }
 
+import { logger } from "@/lib/logger"
+import { nameSimilarity } from "@/lib/string-similarity"
+
 const BASE_URL = "https://libraries.io/api"
 
 function getApiKey(): string {
@@ -74,12 +77,15 @@ export async function fetchPlatforms(): Promise<LibrariesIoPlatform[]> {
   const searchParams = new URLSearchParams({ api_key: key })
   const url = `${BASE_URL}/platforms?${searchParams.toString()}`
 
+  logger.info("Fetching platforms from Libraries.io")
   const res = await fetch(url, { next: { revalidate: 86400 } }) // 1 day
 
   if (!res.ok) {
+    logger.error({ status: res.status, statusText: res.statusText }, "Failed to fetch platforms from Libraries.io")
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
   }
 
+  logger.info("Successfully fetched platforms from Libraries.io")
   return res.json()
 }
 
@@ -96,13 +102,25 @@ export async function searchLibraries(
 
   const url = `${BASE_URL}/search?${searchParams.toString()}`
 
+  logger.info({ query: params.q, platform: params.platforms, page: params.page }, "Searching libraries on Libraries.io")
   const res = await fetch(url, { next: { revalidate: 300 } }) // 5 minutes
 
   if (!res.ok) {
+    logger.error({ status: res.status, statusText: res.statusText, query: params.q }, "Failed to search libraries on Libraries.io")
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
   }
 
-  return res.json()
+  const results: LibrariesIoSearchResult[] = await res.json()
+  logger.info({ query: params.q, resultCount: results.length }, "Libraries.io search completed")
+
+  results.sort((a, b) => {
+    const simA = nameSimilarity(a.name, params.q)
+    const simB = nameSimilarity(b.name, params.q)
+    if (simA !== simB) return simB - simA
+    return b.rank - a.rank
+  })
+
+  return results
 }
 
 export async function fetchProjectVersions(
@@ -114,14 +132,18 @@ export async function fetchProjectVersions(
   const searchParams = new URLSearchParams({ api_key: key })
   const url = `${BASE_URL}/${platform}/${encodedName}?${searchParams.toString()}`
 
+  logger.info({ platform, projectName }, "Fetching project versions from Libraries.io")
   const res = await fetch(url, { next: { revalidate: 300 } })
 
   if (!res.ok) {
+    logger.error({ status: res.status, statusText: res.statusText, platform, projectName }, "Failed to fetch project versions from Libraries.io")
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
   }
 
   const project: LibrariesIoProject = await res.json()
-  return project.versions ?? []
+  const versions = project.versions ?? []
+  logger.info({ platform, projectName, versionCount: versions.length }, "Successfully fetched project versions from Libraries.io")
+  return versions
 }
 
 export async function fetchProject(
@@ -133,11 +155,14 @@ export async function fetchProject(
   const searchParams = new URLSearchParams({ api_key: key })
   const url = `${BASE_URL}/${platform}/${encodedName}?${searchParams.toString()}`
 
+  logger.info({ platform, projectName }, "Fetching project from Libraries.io")
   const res = await fetch(url, { next: { revalidate: 300 } })
 
   if (!res.ok) {
+    logger.error({ status: res.status, statusText: res.statusText, platform, projectName }, "Failed to fetch project from Libraries.io")
     throw new Error(`Libraries.io API error: ${res.status} ${res.statusText}`)
   }
 
+  logger.info({ platform, projectName }, "Successfully fetched project from Libraries.io")
   return res.json()
 }

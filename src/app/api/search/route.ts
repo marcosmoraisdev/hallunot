@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       language: r.language,
       rank: r.rank,
       versions: r.versions ?? [],
-    })).sort((a, b) => b.stars - a.stars)
+    }))
 
     return NextResponse.json({ data })
   } catch (error) {
