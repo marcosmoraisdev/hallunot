@@ -1,4 +1,5 @@
 // src/domain/services/lcs/calculator.ts
+import { WeightedScoreAggregator } from './aggregator'
 import { StabilityScore } from './components/stability-score'
 import { RecencyRiskScore } from './components/recency-risk-score'
 import { SimplicityScore } from './components/simplicity-score'
@@ -23,13 +24,20 @@ export interface VersionCalculationResult {
 
 /**
  * Calculates Library Confidence Score for library+version+LLM combinations.
+ * Uses WeightedScoreAggregator for consistent weighted scoring.
  */
 export class LCSCalculator {
-  private readonly stabilityScorer = new StabilityScore()
-  private readonly simplicityScorer = new SimplicityScore()
-  private readonly popularityScorer = new PopularityScore()
-  private readonly languageScorer = new LanguageAffinityScore()
-  private readonly recencyScorer = new RecencyRiskScore()
+  private readonly aggregator: WeightedScoreAggregator<LCSContext>
+
+  constructor() {
+    this.aggregator = new WeightedScoreAggregator<LCSContext>([
+      new StabilityScore(),
+      new SimplicityScore(),
+      new PopularityScore(),
+      new LanguageAffinityScore(),
+      new RecencyRiskScore(),
+    ])
+  }
 
   calculateForVersion(
     library: LibraryMetadata,
@@ -37,56 +45,26 @@ export class LCSCalculator {
     llm: LLMMetadata
   ): VersionCalculationResult {
     const context: LCSContext = { library, version, llm }
+    const result = this.aggregator.calculate(context)
 
-    // Calculate all component values
-    const stabilityValue = this.stabilityScorer.calculate(context)
-    const simplicityValue = this.simplicityScorer.calculate(context)
-    const popularityValue = this.popularityScorer.calculate(context)
-    const languageValue = this.languageScorer.calculate(context)
-    const recencyValue = this.recencyScorer.calculate(context)
+    const find = (id: string) => {
+      const b = result.breakdown.find((c) => c.id === id)!
+      return { value: b.rawValue, weight: b.weight, contribution: b.contribution }
+    }
 
-    // Build breakdown
     const libraryBreakdown: LibraryScoreBreakdown = {
-      stability: {
-        value: stabilityValue,
-        weight: this.stabilityScorer.weight,
-        contribution: stabilityValue * this.stabilityScorer.weight,
-      },
-      simplicity: {
-        value: simplicityValue,
-        weight: this.simplicityScorer.weight,
-        contribution: simplicityValue * this.simplicityScorer.weight,
-      },
-      popularity: {
-        value: popularityValue,
-        weight: this.popularityScorer.weight,
-        contribution: popularityValue * this.popularityScorer.weight,
-      },
-      language: {
-        value: languageValue,
-        weight: this.languageScorer.weight,
-        contribution: languageValue * this.languageScorer.weight,
-      },
+      stability: find('stability'),
+      simplicity: find('simplicity'),
+      popularity: find('popularity'),
+      language: find('language'),
     }
 
-    const recencyBreakdown: ComponentResult = {
-      value: recencyValue,
-      weight: this.recencyScorer.weight,
-      contribution: recencyValue * this.recencyScorer.weight,
-    }
-
-    // Final score = sum of all contributions
-    const score =
-      libraryBreakdown.stability.contribution +
-      libraryBreakdown.simplicity.contribution +
-      libraryBreakdown.popularity.contribution +
-      libraryBreakdown.language.contribution +
-      recencyBreakdown.contribution
+    const recencyBreakdown: ComponentResult = find('recency')
 
     return {
       version: version.version,
       releaseDate: version.releaseDate.toISOString(),
-      score: Math.round(score * 100) / 100,
+      score: Math.round(result.score * 100) / 100,
       libraryBreakdown,
       recencyBreakdown,
     }
