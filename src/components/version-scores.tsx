@@ -9,6 +9,9 @@ import { ScoreBadge } from "./score-badge"
 import { EmptyState } from "./empty-state"
 import { RISK_LABELS, classifyRisk } from "@/domain/services/risk"
 import { formatDate } from "@/lib/date"
+import { ScoreDetailDialog } from "./score-detail-dialog"
+import { VersionSearchBar } from "./version-search-bar"
+import type { LibraryScoreBreakdown, LGSScoreBreakdown } from "@/domain/services/lcs/types"
 import type { RiskLevel } from "@/domain/models"
 
 interface VersionScoresProps {
@@ -24,6 +27,9 @@ interface DisplayVersion {
   score: number // 0-100 for display
   risk: RiskLevel
   recencyContribution: number
+  lcsScore: number   // 0-1
+  lgsScore: number   // 0-1
+  recencyDetail: { value: number; weight: number; contribution: number }
 }
 
 interface VersionBucket {
@@ -51,11 +57,33 @@ interface ScoreAPIResponse {
   library: string
   platform: string
   llm: string
+  libraryMetadata: {
+    language: string
+    stars: number
+    dependentsCount: number
+    releaseCount: number
+    ageInYears: number
+    keywords: string[]
+  }
+  llmMetadata: {
+    name: string
+    knowledgeCutoff: string
+    contextLimit: number
+    outputLimit: number
+  }
   LCS: {
-    libraryScore: Record<string, unknown>
+    libraryScore: Record<string, { value: number; weight: number; contribution: number }>
     versions: LCSVersionScore[]
   }
-  LGS: { score: number }
+  LGS: {
+    score: number
+    breakdown: {
+      capability: { value: number; weight: number; contribution: number }
+      limit: { value: number; weight: number; contribution: number }
+      recency: { value: number; weight: number; contribution: number }
+      openness: { value: number; weight: number; contribution: number }
+    } | null
+  }
   FS: {
     versions: FSVersionScore[]
     formula: string
@@ -69,7 +97,8 @@ function parseMajorVersion(version: string): number {
 
 function transformToDisplayVersions(
   lcsVersions: LCSVersionScore[],
-  fsVersions: FSVersionScore[]
+  fsVersions: FSVersionScore[],
+  lgsScore: number
 ): DisplayVersion[] {
   // Create a map for quick FS score lookup
   const fsMap = new Map<string, FSVersionScore>()
@@ -90,6 +119,9 @@ function transformToDisplayVersions(
       score,
       risk: classifyRisk(score),
       recencyContribution: lcs.recency.contribution,
+      lcsScore: fs?.lcs ?? lcs.score,
+      lgsScore: fs?.lgs ?? lgsScore,
+      recencyDetail: lcs.recency,
     }
   })
 }
@@ -128,6 +160,14 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
   const [expandedBuckets, setExpandedBuckets] = useState<Set<number>>(new Set())
   const lastFetchKey = useRef("")
 
+  // Enriched data for detail dialog
+  const [libraryScore, setLibraryScore] = useState<LibraryScoreBreakdown | null>(null)
+  const [lgsBreakdown, setLgsBreakdown] = useState<LGSScoreBreakdown | null>(null)
+  const [libraryMeta, setLibraryMeta] = useState<ScoreAPIResponse["libraryMetadata"] | null>(null)
+  const [llmMeta, setLlmMeta] = useState<ScoreAPIResponse["llmMetadata"] | null>(null)
+  const [dialogVersion, setDialogVersion] = useState<DisplayVersion | null>(null)
+  const [searchQueries, setSearchQueries] = useState<Map<number, string>>(new Map())
+
   useEffect(() => {
     const key = `${llmId}-${libraryName}-${platform}`
     if (lastFetchKey.current === key) return
@@ -137,6 +177,12 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
     setError(null)
     setBuckets([])
     setExpandedBuckets(new Set())
+    setLibraryScore(null)
+    setLgsBreakdown(null)
+    setLibraryMeta(null)
+    setLlmMeta(null)
+    setDialogVersion(null)
+    setSearchQueries(new Map())
 
     const params = new URLSearchParams({
       llm: llmId,
@@ -164,10 +210,16 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
           return
         }
 
-        const displayVersions = transformToDisplayVersions(lcsVersions, fsVersions)
+        const displayVersions = transformToDisplayVersions(lcsVersions, fsVersions, json.LGS?.score ?? 0)
         const groupedBuckets = groupIntoBuckets(displayVersions)
 
         setBuckets(groupedBuckets)
+
+        // Store enriched data for the detail dialog
+        setLibraryScore(json.LCS?.libraryScore as unknown as LibraryScoreBreakdown ?? null)
+        setLgsBreakdown(json.LGS?.breakdown ?? null)
+        setLibraryMeta(json.libraryMetadata ?? null)
+        setLlmMeta(json.llmMetadata ?? null)
       })
       .catch((err) => {
         if (lastFetchKey.current !== key) return
@@ -187,6 +239,18 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
         next.delete(major)
       } else {
         next.add(major)
+      }
+      return next
+    })
+  }
+
+  const updateSearch = (major: number, query: string) => {
+    setSearchQueries((prev) => {
+      const next = new Map(prev)
+      if (query) {
+        next.set(major, query)
+      } else {
+        next.delete(major)
       }
       return next
     })
@@ -271,37 +335,67 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
                   className="border-t border-border/50"
                 >
                   <div className="p-2 space-y-2">
-                    {bucket.versions.map((item) => (
-                      <div
-                        key={item.version}
-                        className={cn(
-                          "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3",
-                          "sm:flex-row sm:items-center sm:justify-between"
-                        )}
-                      >
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-sm font-medium text-card-foreground">
-                              v{item.version}
-                            </span>
-                            <ScoreBadge score={item.score} risk={item.risk} />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                              {RISK_LABELS[item.risk]}
-                            </span>
-                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {formatDate(item.releaseDate)}
-                            </span>
-                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <TrendingUp className="h-3 w-3" />
-                              Recency: {Math.round(item.recencyContribution * 100)}%
-                            </span>
+                    {/* Search bar for large buckets */}
+                    {bucket.versions.length > 10 && (
+                      <VersionSearchBar
+                        value={searchQueries.get(bucket.major) ?? ""}
+                        onChange={(q) => updateSearch(bucket.major, q)}
+                        totalCount={bucket.versions.length}
+                        filteredCount={
+                          bucket.versions.filter((v) =>
+                            v.version.includes(searchQueries.get(bucket.major) ?? "")
+                          ).length
+                        }
+                      />
+                    )}
+
+                    {/* Version list (filtered) */}
+                    {(() => {
+                      const query = searchQueries.get(bucket.major) ?? ""
+                      const filtered = query
+                        ? bucket.versions.filter((v) => v.version.includes(query))
+                        : bucket.versions
+                      return filtered.map((item) => (
+                        <div
+                          key={item.version}
+                          className={cn(
+                            "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3",
+                            "sm:flex-row sm:items-center sm:justify-between"
+                          )}
+                        >
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono text-sm font-medium text-card-foreground">
+                                v{item.version}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDialogVersion(item)
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <ScoreBadge score={item.score} risk={item.risk} />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                                {RISK_LABELS[item.risk]}
+                              </span>
+                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(item.releaseDate)}
+                              </span>
+                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <TrendingUp className="h-3 w-3" />
+                                Recency: {Math.round(item.recencyContribution * 100)}%
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    })()}
                   </div>
                 </motion.div>
               )}
@@ -309,6 +403,15 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
           </div>
         )
       })}
+
+      <ScoreDetailDialog
+        version={dialogVersion}
+        libraryScore={libraryScore}
+        lgsBreakdown={lgsBreakdown}
+        libraryMetadata={libraryMeta}
+        llmMetadata={llmMeta}
+        onClose={() => setDialogVersion(null)}
+      />
     </div>
   )
 }
