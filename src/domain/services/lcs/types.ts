@@ -114,12 +114,36 @@ export interface FSOutput {
 }
 
 /**
+ * Library metadata included in API response for UI context.
+ */
+export interface LibraryMetadataResponse {
+  language: string
+  stars: number
+  dependentsCount: number
+  releaseCount: number
+  ageInYears: number
+  keywords: string[]
+}
+
+/**
+ * LLM metadata included in API response for UI context.
+ */
+export interface LLMMetadataResponse {
+  name: string
+  knowledgeCutoff: string
+  contextLimit: number
+  outputLimit: number
+}
+
+/**
  * Complete score response structure.
  */
 export interface ScoreResponse {
   library: string
   platform: string
   llm: string
+  libraryMetadata: LibraryMetadataResponse
+  llmMetadata: LLMMetadataResponse
   LCS: LCSOutput
   LGS: LGSOutput
   FS: FSOutput
