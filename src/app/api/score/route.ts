@@ -9,7 +9,7 @@ import { calculateFinalScores } from "@/domain/services/final-score"
 import { mapToLibraryMetadata, mapToVersionMetadata } from "@/infrastructure/mappers/library-metadata-mapper"
 import { logger } from "@/lib/logger"
 import { knowledgeCutoffToMs } from "@/lib/date"
-import type { ScoreResponse, VersionScore, LCSOutput } from "@/domain/services/lcs/types"
+import type { ScoreResponse, VersionScore, LCSOutput, LibraryMetadataResponse, LLMMetadataResponse } from "@/domain/services/lcs/types"
 
 export async function GET(request: Request) {
   const reqStart = Date.now()
@@ -64,6 +64,14 @@ export async function GET(request: Request) {
       )
     }
 
+    // Build LLM metadata for response early so both paths can use it
+    const llmMeta: LLMMetadataResponse = {
+      name: model.name,
+      knowledgeCutoff: model.knowledgeCutoff ?? '',
+      contextLimit: model.limit?.context ?? 0,
+      outputLimit: model.limit?.output ?? 0,
+    }
+
     // Fetch project from Libraries.io
     let project
     const fetchStart = Date.now()
@@ -85,11 +93,23 @@ export async function GET(request: Request) {
     const libraryMetadata = mapToLibraryMetadata(project)
     const versions = mapToVersionMetadata(project.versions ?? [])
 
+    // Build library metadata for response
+    const libraryMeta: LibraryMetadataResponse = {
+      language: libraryMetadata.language,
+      stars: libraryMetadata.stars,
+      dependentsCount: libraryMetadata.dependentsCount,
+      releaseCount: libraryMetadata.releaseCount,
+      ageInYears: Math.round(libraryMetadata.ageInYears * 10) / 10,
+      keywords: libraryMetadata.keywords,
+    }
+
     if (versions.length === 0) {
       const emptyResponse: ScoreResponse = {
         library: libraryName,
         platform,
         llm: model.name,
+        libraryMetadata: libraryMeta,
+        llmMetadata: llmMeta,
         LCS: {
           libraryScore: {
             stability: { value: 0, weight: 0.30, contribution: 0 },
@@ -160,6 +180,8 @@ export async function GET(request: Request) {
       library: libraryName,
       platform,
       llm: model.name,
+      libraryMetadata: libraryMeta,
+      llmMetadata: llmMeta,
       LCS: lcsOutput,
       LGS: lgsOutput,
       FS: fsOutput,
