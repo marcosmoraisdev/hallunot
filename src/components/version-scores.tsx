@@ -34,7 +34,7 @@ interface DisplayVersion {
 
 interface VersionBucket {
   major: number
-  bestScore: number
+  avgScore: number
   versions: DisplayVersion[]
 }
 
@@ -148,9 +148,12 @@ function groupIntoBuckets(versions: DisplayVersion[]): VersionBucket[] {
   for (const [major, vers] of bucketMap) {
     // Sort versions by release date descending
     vers.sort((a, b) => b.releaseDate - a.releaseDate)
+    const avg = vers.length > 0
+      ? Math.round(vers.reduce((sum, v) => sum + v.score, 0) / vers.length)
+      : 0
     buckets.push({
       major,
-      bestScore: vers[0]?.score ?? 0,
+      avgScore: avg,
       versions: vers,
     })
   }
@@ -301,7 +304,7 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
     <div className="space-y-3">
       {buckets.map((bucket) => {
         const isExpanded = expandedBuckets.has(bucket.major)
-        const bestRisk = bucket.versions[0]?.risk ?? "medium"
+        const avgRisk = classifyRisk(bucket.avgScore)
         return (
           <div
             key={bucket.major}
@@ -329,7 +332,7 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
                   ({bucket.versions.length} version{bucket.versions.length !== 1 ? "s" : ""})
                 </span>
               </div>
-              <ScoreBadge score={bucket.bestScore} risk={bestRisk} />
+              <ScoreBadge score={bucket.avgScore} risk={avgRisk} />
             </button>
 
             {/* Bucket content */}
