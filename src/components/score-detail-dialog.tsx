@@ -3,7 +3,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog"
 import * as ScrollArea from "@radix-ui/react-scroll-area"
-import { X, Library, Brain, Info } from "lucide-react"
+import { X, Library, Brain, Info, CircleCheck, CircleX } from "lucide-react"
 import { cn } from "@/lib/cn"
 import { ScoreBadge } from "./score-badge"
 import { ComponentScoreList } from "./score-breakdown"
@@ -32,11 +32,21 @@ interface LibraryMeta {
   keywords: string[]
 }
 
+interface LLMCapabilities {
+  reasoning: boolean
+  toolCall: boolean
+  structuredOutput: boolean
+  attachment: boolean
+  multimodalInput: boolean
+  multimodalOutput: boolean
+}
+
 interface LLMMeta {
   name: string
   knowledgeCutoff: string
   contextLimit: number
   outputLimit: number
+  capabilities: LLMCapabilities
 }
 
 interface ScoreDetailDialogProps {
@@ -159,6 +169,34 @@ function buildLCSComponents(
   return components.sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label))
 }
 
+function buildCapabilityTooltip(capabilities: LLMCapabilities) {
+  const features = [
+    { label: "Reasoning", enabled: capabilities.reasoning },
+    { label: "Tool Calling", enabled: capabilities.toolCall },
+    { label: "Structured Output", enabled: capabilities.structuredOutput },
+    { label: "File Attachments", enabled: capabilities.attachment },
+    { label: "Multimodal Input", enabled: capabilities.multimodalInput },
+    { label: "Multimodal Output", enabled: capabilities.multimodalOutput },
+  ]
+
+  return (
+    <div className="space-y-1">
+      {features.map((f) => (
+        <div key={f.label} className="flex items-center gap-2 text-[11px]">
+          {f.enabled ? (
+            <CircleCheck className="h-3.5 w-3.5 text-risk-low shrink-0" />
+          ) : (
+            <CircleX className="h-3.5 w-3.5 text-risk-high shrink-0" />
+          )}
+          <span className={f.enabled ? "text-card-foreground" : "text-muted-foreground"}>
+            {f.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function buildLGSComponents(
   breakdown: LGSScoreBreakdown,
   llmMeta: LLMMeta | null
@@ -175,6 +213,7 @@ function buildLGSComponents(
         breakdown.capability.value >= 0.5 ? "moderately capable" :
         "limited feature set"
       }`,
+      tooltip: llmMeta?.capabilities ? buildCapabilityTooltip(llmMeta.capabilities) : undefined,
     },
     {
       id: "limit",

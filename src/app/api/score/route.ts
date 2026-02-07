@@ -65,11 +65,20 @@ export async function GET(request: Request) {
     }
 
     // Build LLM metadata for response early so both paths can use it
+    const modalities = model.modalities ?? { input: ['text'], output: ['text'] }
     const llmMeta: LLMMetadataResponse = {
       name: model.name,
       knowledgeCutoff: model.knowledgeCutoff ?? '',
       contextLimit: model.limit?.context ?? 0,
       outputLimit: model.limit?.output ?? 0,
+      capabilities: {
+        reasoning: model.reasoning ?? false,
+        toolCall: model.toolCall ?? false,
+        structuredOutput: model.structuredOutput ?? false,
+        attachment: model.attachment ?? false,
+        multimodalInput: modalities.input.length > 1,
+        multimodalOutput: modalities.output.length > 1,
+      },
     }
 
     // Fetch project from Libraries.io
@@ -162,7 +171,7 @@ export async function GET(request: Request) {
         toolCall: model.toolCall ?? false,
         structuredOutput: model.structuredOutput ?? false,
         attachment: model.attachment ?? false,
-        modalities: model.modalities ?? { input: ['text'], output: ['text'] },
+        modalities,
         contextLimit: model.limit?.context ?? 0,
         outputLimit: model.limit?.output ?? 0,
         knowledgeCutoff: cutoffMs ? new Date(cutoffMs) : undefined,

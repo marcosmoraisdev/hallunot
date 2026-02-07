@@ -12,6 +12,7 @@ export interface ScoreComponentData {
   weight: number       // 0-1 weight in the formula
   contribution: number // value × weight
   description: string  // human-readable explanation
+  tooltip?: ReactNode  // optional rich tooltip content next to label
 }
 
 /**

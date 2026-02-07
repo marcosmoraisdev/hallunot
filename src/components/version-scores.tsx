@@ -70,6 +70,14 @@ interface ScoreAPIResponse {
     knowledgeCutoff: string
     contextLimit: number
     outputLimit: number
+    capabilities: {
+      reasoning: boolean
+      toolCall: boolean
+      structuredOutput: boolean
+      attachment: boolean
+      multimodalInput: boolean
+      multimodalOutput: boolean
+    }
   }
   LCS: {
     libraryScore: Record<string, { value: number; weight: number; contribution: number }>

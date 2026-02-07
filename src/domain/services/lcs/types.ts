@@ -126,6 +126,18 @@ export interface LibraryMetadataResponse {
 }
 
 /**
+ * Individual capability flags for the LLM model.
+ */
+export interface LLMCapabilities {
+  reasoning: boolean
+  toolCall: boolean
+  structuredOutput: boolean
+  attachment: boolean
+  multimodalInput: boolean
+  multimodalOutput: boolean
+}
+
+/**
  * LLM metadata included in API response for UI context.
  */
 export interface LLMMetadataResponse {
@@ -133,6 +145,7 @@ export interface LLMMetadataResponse {
   knowledgeCutoff: string
   contextLimit: number
   outputLimit: number
+  capabilities: LLMCapabilities
 }
 
 /**
