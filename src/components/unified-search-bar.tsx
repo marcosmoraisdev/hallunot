@@ -105,7 +105,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
             position="popper"
             side="bottom"
             sideOffset={8}
-            avoidCollisions={false}
+            avoidCollisions
           >
             {/* Filter input */}
             <div className="shrink-0 border-b border-border/50 p-2">

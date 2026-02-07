@@ -101,7 +101,7 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
             position="popper"
             side="bottom"
             sideOffset={8}
-            avoidCollisions={false}
+            avoidCollisions
           >
             {/* Filter input */}
             <div className="shrink-0 border-b border-border/50 p-2">

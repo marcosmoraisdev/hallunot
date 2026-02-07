@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Lightbulb, Heart, Github } from "lucide-react"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import { Lightbulb, Heart, Github, Menu } from "lucide-react"
 import { HowItWorksDialog } from "./how-it-works-dialog"
 
 export function Header() {
@@ -16,6 +17,7 @@ export function Header() {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {/* Desktop nav */}
           <nav className="hidden items-center gap-1 sm:flex">
             <button
               onClick={() => setHowItWorksOpen(true)}
@@ -43,6 +45,55 @@ export function Header() {
               Donate
             </a>
           </nav>
+
+          {/* Mobile hamburger menu */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:hidden"
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={8}
+                className="z-50 min-w-[180px] rounded-xl border border-border/50 bg-card p-1 shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+              >
+                <DropdownMenu.Item
+                  onSelect={() => setHowItWorksOpen(true)}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors data-[highlighted]:bg-muted"
+                >
+                  <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                  How it works
+                </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <a
+                    href="https://github.com/marcosmoraisdev/hallunot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors data-[highlighted]:bg-muted"
+                  >
+                    <Github className="h-4 w-4 text-muted-foreground" />
+                    Code
+                  </a>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <a
+                    href={process.env.NEXT_PUBLIC_STRIPE_DONATE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors data-[highlighted]:bg-muted"
+                  >
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    Donate
+                  </a>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
       </div>
       <HowItWorksDialog open={howItWorksOpen} onOpenChange={setHowItWorksOpen} />
