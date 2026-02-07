@@ -20,7 +20,7 @@ const COMPLEX_KEYWORDS = [
  */
 export class SimplicityScore implements ScoreComponent<LCSContext> {
   readonly id = 'simplicity'
-  readonly weight = 0.15
+  readonly weight = 0.10
 
   calculate(ctx: LCSContext): number {
     const keywords = ctx.library.keywords.map((k) => k.toLowerCase())

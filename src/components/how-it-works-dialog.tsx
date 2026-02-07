@@ -85,7 +85,7 @@ function ComponentRow({
         <span className="text-xs font-semibold text-card-foreground">{name}</span>
         <WeightBadge weight={weight} />
       </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+      <p className="text-[12px] leading-relaxed text-muted-foreground">{description}</p>
     </div>
   )
 }
@@ -136,25 +136,23 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                       <FlowStep label="Search a library" />
                       <FlowStep label="View version scores" isLast />
                     </div>
-                    <p className="text-[11px] leading-relaxed text-muted-foreground text-center">
+                    <p className="text-[12px] leading-relaxed text-muted-foreground text-center">
                       Scores indicate how likely the LLM&apos;s training data covers that library version — helping you avoid hallucinations without RAG or web search.
+                    </p>
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
+                      Important note! Models without a known knowledge cutoff date are excluded since they cannot be scored.
                     </p>
                   </AccordionItem>
 
                   {/* 2. LCS */}
                   <AccordionItem icon={Library} title="Library Confidence Score (LCS)">
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
                       Measures how confident we are that the LLM knows this specific library version. It&apos;s a weighted sum of five components, each normalized to 0–1.
                     </p>
                     <div className="space-y-2">
                       <ComponentRow
-                        name="Stability"
-                        weight={30}
-                        description="API volatility based on release frequency. Libraries with fewer releases per year have a more stable API surface, making them easier for LLMs to reproduce accurately. Calculated as an inverse normalization of releases/year (range: 2–20)."
-                      />
-                      <ComponentRow
                         name="Recency"
-                        weight={25}
+                        weight={40}
                         description="How the version's release date relates to the LLM's knowledge cutoff. Versions released well before the cutoff score 0.5–1.0 (more time in training data). Versions after the cutoff drop from 0.5 to 0.0 over 12 months — the further past cutoff, the less likely the LLM has seen it."
                       />
                       <ComponentRow
@@ -163,21 +161,26 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                         description="Adoption proxy using GitHub stars and dependent package count, log-scaled to prevent mega-popular libraries from dominating. More popular libraries appear more frequently in training data, so the LLM is more likely to produce accurate code."
                       />
                       <ComponentRow
-                        name="Simplicity"
-                        weight={15}
-                        description="Conceptual complexity estimated from library keywords. Simpler, focused APIs are easier for LLMs to reproduce correctly. Complex ecosystems (frameworks, platforms, enterprise tools) tend to have more nuanced APIs that increase hallucination risk."
+                        name="Stability"
+                        weight={20}
+                        description="API volatility based on release frequency. Libraries with fewer releases per year have a more stable API surface, making them easier for LLMs to reproduce accurately. For versions released before the LLM's knowledge cutoff, stability is scored at maximum since the training data likely covers the library's release history."
                       />
                       <ComponentRow
                         name="Language Affinity"
                         weight={10}
                         description="How well-represented the programming language is in LLM training data. JavaScript/TypeScript and Python score 1.0 (heavily represented), while less common languages score lower (down to 0.5 for unknown languages)."
                       />
+                      <ComponentRow
+                        name="Simplicity"
+                        weight={10}
+                        description="Conceptual complexity estimated from library keywords. Simpler, focused APIs are easier for LLMs to reproduce correctly. Complex ecosystems (frameworks, platforms, enterprise tools) tend to have more nuanced APIs that increase hallucination risk."
+                      />
                     </div>
                   </AccordionItem>
 
                   {/* 3. LGS */}
                   <AccordionItem icon={Brain} title="LLM Generic Score (LGS)">
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
                       Measures the LLM model&apos;s general capability and modernity, independent of the library being evaluated. Also a weighted sum of components normalized to 0–1.
                     </p>
                     <div className="space-y-2">
@@ -188,7 +191,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                       />
                       <ComponentRow
                         name="Model Recency"
-                        weight={25}
+                        weight={30}
                         description="How fresh the model's training data is, based on knowledge cutoff date (70% weight) and last update date (30% weight). More recent models have seen more recent library versions and coding patterns."
                       />
                       <ComponentRow
@@ -198,7 +201,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                       />
                       <ComponentRow
                         name="Openness"
-                        weight={15}
+                        weight={10}
                         description="Transparency and ecosystem compatibility. Open-weight models (70% of score) tend to have more community tooling and fine-tuning, while OpenAI-compatible APIs (30% of score) indicate broader ecosystem integration."
                       />
                     </div>
@@ -206,7 +209,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
 
                   {/* 4. Final Score */}
                   <AccordionItem icon={Calculator} title="Final Score (FS)">
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
                       The final score combines both indices through multiplication. Both need to be strong for a high result — a great library version scored on a weak model (or vice versa) will still yield a moderate score.
                     </p>
                     <div className="flex items-center justify-center gap-3 py-3 px-3 rounded-lg border border-border/50 bg-background">
@@ -225,14 +228,14 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                         <span className="text-sm font-bold tabular-nums text-card-foreground">0–100</span>
                       </div>
                     </div>
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
                       Example: If a library version scores LCS = 85 and the model scores LGS = 75, the final score is 85% &times; 75% = 64. Click on any version&apos;s score badge to see its full breakdown.
                     </p>
                   </AccordionItem>
 
                   {/* 5. Risk Levels */}
                   <AccordionItem icon={ShieldCheck} title="Risk Levels">
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
                       The final score maps to three risk levels that indicate how much you can trust the LLM&apos;s output for that library version.
                     </p>
                     <div className="space-y-2">
@@ -242,7 +245,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                         </div>
                         <div>
                           <p className="text-xs font-semibold text-risk-low">High reliability</p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[12px] text-muted-foreground">
                             The LLM likely has solid training data coverage for this version. Expect accurate code generation with minimal hallucinations.
                           </p>
                         </div>
@@ -253,7 +256,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                         </div>
                         <div>
                           <p className="text-xs font-semibold text-risk-medium">May require adjustments</p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[12px] text-muted-foreground">
                             Partial coverage — the LLM may mix older API patterns or produce code that needs tweaking. Consider providing extra context.
                           </p>
                         </div>
@@ -264,7 +267,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                         </div>
                         <div>
                           <p className="text-xs font-semibold text-risk-high">High risk of outdated responses</p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[12px] text-muted-foreground">
                             Released after the LLM&apos;s cutoff or scored on a limited model. High hallucination risk — use RAG, web search, or MCP for reliable results.
                           </p>
                         </div>

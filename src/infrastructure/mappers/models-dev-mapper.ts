@@ -53,9 +53,9 @@ export function mapProvider(
   providerId: string,
   dto: ModelsDevProviderDTO
 ): LlmProvider {
-  const models = Object.entries(dto.models).map(([modelId, modelDto]) =>
-    mapModel(providerId, modelId, modelDto)
-  )
+  const models = Object.entries(dto.models)
+    .filter(([, modelDto]) => !!modelDto.knowledge)
+    .map(([modelId, modelDto]) => mapModel(providerId, modelId, modelDto))
 
   return {
     id: dto.id || providerId,

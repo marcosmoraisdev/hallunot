@@ -7,7 +7,7 @@ import type { LGSContext, LGSScoreComponent } from '../types'
  */
 export class OpennessScore implements LGSScoreComponent {
   readonly id = 'openness'
-  readonly weight = 0.15
+  readonly weight = 0.10
 
   calculate(ctx: LGSContext): number {
     const { openWeights, apiCompatibility } = ctx.model

@@ -2,6 +2,9 @@
 import { StabilityScore } from '../components/stability-score'
 import type { LCSContext } from '../types'
 
+const pastCutoff = new Date('2024-01-01')
+const postCutoffVersion = new Date('2025-06-01')
+
 function createContext(overrides: Partial<LCSContext['library']> = {}): LCSContext {
   return {
     library: {
@@ -14,8 +17,9 @@ function createContext(overrides: Partial<LCSContext['library']> = {}): LCSConte
       dependentsCount: 100,
       ...overrides,
     },
-    version: { version: '1.0.0', releaseDate: new Date() },
-    llm: { id: 'test', name: 'Test LLM', cutoffDate: new Date() },
+    // Post-cutoff version so volatility tests exercise the formula
+    version: { version: '1.0.0', releaseDate: postCutoffVersion },
+    llm: { id: 'test', name: 'Test LLM', cutoffDate: pastCutoff },
   }
 }
 
@@ -24,10 +28,19 @@ describe('StabilityScore', () => {
 
   it('has correct id and weight', () => {
     expect(scorer.id).toBe('stability')
-    expect(scorer.weight).toBe(0.30)
+    expect(scorer.weight).toBe(0.20)
   })
 
-  it('returns 0.5 for libraries with zero age', () => {
+  it('returns 1.0 for pre-cutoff versions (bypass)', () => {
+    const ctx: LCSContext = {
+      ...createContext({ ageInYears: 1, releaseCount: 100 }),
+      version: { version: '1.0.0', releaseDate: new Date('2023-01-01') },
+    }
+    // Even a volatile library gets perfect stability for pre-cutoff versions
+    expect(scorer.calculate(ctx)).toBe(1.0)
+  })
+
+  it('returns 0.5 for post-cutoff libraries with zero age', () => {
     const ctx = createContext({ ageInYears: 0, releaseCount: 10 })
     expect(scorer.calculate(ctx)).toBe(0.5)
   })

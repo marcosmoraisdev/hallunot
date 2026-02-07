@@ -7,6 +7,62 @@ import type {
 } from "../models/llm-response"
 
 /**
+ * Priority order for top providers in the UI.
+ * Lower number = higher priority. Unlisted providers get Infinity.
+ */
+const PROVIDER_PRIORITY: Record<string, number> = {
+  anthropic: 0,
+  google: 1,
+  openai: 2,
+}
+
+function getProviderPriority(providerId: string): number {
+  return PROVIDER_PRIORITY[providerId.toLowerCase()] ?? Infinity
+}
+
+/**
+ * Sort providers: prioritized first (Anthropic, Google, OpenAI), then alphabetical by name.
+ */
+export function sortProviders<T extends { id: string; name: string }>(
+  providers: T[]
+): T[] {
+  return [...providers].sort((a, b) => {
+    const priorityA = getProviderPriority(a.id)
+    const priorityB = getProviderPriority(b.id)
+    if (priorityA !== priorityB) return priorityA - priorityB
+    return a.name.localeCompare(b.name)
+  })
+}
+
+/**
+ * Sort models: newest releaseDate first, provider priority as tiebreaker,
+ * then provider name alphabetical. Models without releaseDate go to the bottom.
+ */
+export function sortModels(models: LlmModel[]): LlmModel[] {
+  return [...models].sort((a, b) => {
+    const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : NaN
+    const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : NaN
+    const hasDateA = !Number.isNaN(dateA)
+    const hasDateB = !Number.isNaN(dateB)
+
+    // Models without dates go to the bottom
+    if (hasDateA && !hasDateB) return -1
+    if (!hasDateA && hasDateB) return 1
+
+    // Both have dates: newest first
+    if (hasDateA && hasDateB && dateA !== dateB) return dateB - dateA
+
+    // Tiebreaker: provider priority
+    const priorityA = getProviderPriority(a.providerId)
+    const priorityB = getProviderPriority(b.providerId)
+    if (priorityA !== priorityB) return priorityA - priorityB
+
+    // Final tiebreaker: provider name alphabetical
+    return a.providerId.localeCompare(b.providerId)
+  })
+}
+
+/**
  * Filters for LLM queries
  */
 export interface LlmFilters {
@@ -158,6 +214,9 @@ export function filterAndPaginateLlms(
     allModels = allModels.filter((model) => modelMatchesSearch(model, search))
   }
 
+  // Sort models by release date (newest first), provider priority as tiebreaker
+  allModels = sortModels(allModels)
+
   // Calculate pagination (1-indexed)
   const total = allModels.length
   const totalPages = Math.ceil(total / perPage)
@@ -175,8 +234,9 @@ export function filterAndPaginateLlms(
     totalPages,
   }
 
-  // Transform to response types
-  const providerResponses = mapProvidersToResponse(filteredProviders)
+  // Transform to response types (sorted: prioritized providers first, then alphabetical)
+  const sortedProviders = sortProviders(filteredProviders)
+  const providerResponses = mapProvidersToResponse(sortedProviders)
   const modelResponses = mapModelsToResponse(paginatedModels, providerNameMap)
 
   return {

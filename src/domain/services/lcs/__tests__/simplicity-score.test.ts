@@ -23,7 +23,7 @@ describe('SimplicityScore', () => {
 
   it('has correct id and weight', () => {
     expect(scorer.id).toBe('simplicity')
-    expect(scorer.weight).toBe(0.15)
+    expect(scorer.weight).toBe(0.10)
   })
 
   it('returns 1.0 for libraries with no complex keywords', () => {

@@ -11,7 +11,7 @@ const MS_PER_MONTH = 30 * 24 * 60 * 60 * 1000
  */
 export class RecencyRiskScore implements ScoreComponent<LCSContext> {
   readonly id = 'recency'
-  readonly weight = 0.25
+  readonly weight = 0.40
 
   calculate(ctx: LCSContext): number {
     const versionDate = ctx.version.releaseDate.getTime()

@@ -24,9 +24,9 @@ function makeCtx(overrides: Partial<LGSContext['model']> = {}): LGSContext {
 describe('OpennessScore', () => {
   const scorer = new OpennessScore()
 
-  it('has id "openness" and weight 0.15', () => {
+  it('has id "openness" and weight 0.10', () => {
     expect(scorer.id).toBe('openness')
-    expect(scorer.weight).toBe(0.15)
+    expect(scorer.weight).toBe(0.10)
   })
 
   it('returns 0 when no openness signals present', () => {

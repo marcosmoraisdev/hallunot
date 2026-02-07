@@ -4,6 +4,8 @@ import {
   filterAndPaginateLlms,
   mapProvidersToResponse,
   findModelById,
+  sortProviders,
+  sortModels,
 } from "../llm-service"
 import type { LlmProvider } from "@/domain/models/llm"
 
@@ -23,6 +25,7 @@ function createTestProviders(): LlmProvider[] {
           providerId: "openai",
           name: "GPT-4",
           family: "gpt",
+          releaseDate: "2024-03-01",
           knowledgeCutoff: "2024-04",
         },
         {
@@ -30,6 +33,7 @@ function createTestProviders(): LlmProvider[] {
           providerId: "openai",
           name: "GPT-3.5 Turbo",
           family: "gpt",
+          releaseDate: "2023-06-01",
           knowledgeCutoff: "2023-09",
         },
       ],
@@ -47,6 +51,7 @@ function createTestProviders(): LlmProvider[] {
           providerId: "anthropic",
           name: "Claude 3 Opus",
           family: "claude",
+          releaseDate: "2024-04-01",
           knowledgeCutoff: "2024-04",
         },
         {
@@ -54,6 +59,7 @@ function createTestProviders(): LlmProvider[] {
           providerId: "anthropic",
           name: "Claude 3 Sonnet",
           family: "claude",
+          releaseDate: "2024-03-01",
           knowledgeCutoff: "2024-04",
         },
       ],
@@ -71,6 +77,7 @@ function createTestProviders(): LlmProvider[] {
           providerId: "google",
           name: "Gemini Pro",
           family: "gemini",
+          releaseDate: "2024-02-01",
           knowledgeCutoff: "2024-01",
         },
       ],
@@ -95,8 +102,10 @@ describe("filterAndPaginateLlms", () => {
       expect(result.pagination.perPage).toBe(10)
     })
 
-    it("paginates correctly", () => {
+    it("paginates correctly with sorted models", () => {
       const providers = createTestProviders()
+      // Sorted order: Claude 3 Opus (2024-04), Claude 3 Sonnet (2024-03, anthropic priority),
+      //               GPT-4 (2024-03, openai priority), Gemini Pro (2024-02), GPT-3.5 Turbo (2023-06)
 
       const page1 = filterAndPaginateLlms(
         providers,
@@ -104,8 +113,8 @@ describe("filterAndPaginateLlms", () => {
         { page: 1, perPage: 2 }
       )
       expect(page1.models).toHaveLength(2)
-      expect(page1.models[0].name).toBe("GPT-4")
-      expect(page1.models[1].name).toBe("GPT-3.5 Turbo")
+      expect(page1.models[0].name).toBe("Claude 3 Opus")
+      expect(page1.models[1].name).toBe("Claude 3 Sonnet")
       expect(page1.pagination.totalPages).toBe(3)
 
       const page2 = filterAndPaginateLlms(
@@ -114,8 +123,8 @@ describe("filterAndPaginateLlms", () => {
         { page: 2, perPage: 2 }
       )
       expect(page2.models).toHaveLength(2)
-      expect(page2.models[0].name).toBe("Claude 3 Opus")
-      expect(page2.models[1].name).toBe("Claude 3 Sonnet")
+      expect(page2.models[0].name).toBe("GPT-4")
+      expect(page2.models[1].name).toBe("Gemini Pro")
 
       const page3 = filterAndPaginateLlms(
         providers,
@@ -123,7 +132,7 @@ describe("filterAndPaginateLlms", () => {
         { page: 3, perPage: 2 }
       )
       expect(page3.models).toHaveLength(1)
-      expect(page3.models[0].name).toBe("Gemini Pro")
+      expect(page3.models[0].name).toBe("GPT-3.5 Turbo")
     })
   })
 
@@ -237,6 +246,112 @@ describe("mapProvidersToResponse", () => {
       doc: "https://openai.com/docs",
       modelCount: 2,
     })
+  })
+})
+
+describe("sortProviders", () => {
+  it("sorts prioritized providers first, then alphabetical", () => {
+    const providers = [
+      { id: "mistral", name: "Mistral" },
+      { id: "openai", name: "OpenAI" },
+      { id: "cohere", name: "Cohere" },
+      { id: "anthropic", name: "Anthropic" },
+      { id: "google", name: "Google" },
+    ]
+
+    const sorted = sortProviders(providers)
+    expect(sorted.map((p) => p.id)).toEqual([
+      "anthropic",
+      "google",
+      "openai",
+      "cohere",
+      "mistral",
+    ])
+  })
+
+  it("handles all non-prioritized providers alphabetically", () => {
+    const providers = [
+      { id: "mistral", name: "Mistral" },
+      { id: "cohere", name: "Cohere" },
+      { id: "ai21", name: "AI21" },
+    ]
+
+    const sorted = sortProviders(providers)
+    expect(sorted.map((p) => p.id)).toEqual(["ai21", "cohere", "mistral"])
+  })
+})
+
+describe("sortModels", () => {
+  it("sorts by release date descending (newest first)", () => {
+    const models = [
+      { id: "a", providerId: "openai", name: "Old", family: "f", releaseDate: "2023-01-01" },
+      { id: "b", providerId: "openai", name: "New", family: "f", releaseDate: "2024-06-01" },
+      { id: "c", providerId: "openai", name: "Mid", family: "f", releaseDate: "2024-01-01" },
+    ] as LlmModel[]
+
+    const sorted = sortModels(models)
+    expect(sorted.map((m) => m.name)).toEqual(["New", "Mid", "Old"])
+  })
+
+  it("uses provider priority as tiebreaker for same release date", () => {
+    const models = [
+      { id: "a", providerId: "openai", name: "GPT-4", family: "f", releaseDate: "2024-03-01" },
+      { id: "b", providerId: "anthropic", name: "Claude", family: "f", releaseDate: "2024-03-01" },
+      { id: "c", providerId: "google", name: "Gemini", family: "f", releaseDate: "2024-03-01" },
+    ] as LlmModel[]
+
+    const sorted = sortModels(models)
+    // anthropic=0, google=1, openai=2
+    expect(sorted.map((m) => m.name)).toEqual(["Claude", "Gemini", "GPT-4"])
+  })
+
+  it("pushes models without releaseDate to the bottom", () => {
+    const models = [
+      { id: "a", providerId: "openai", name: "No Date", family: "f" },
+      { id: "b", providerId: "openai", name: "Has Date", family: "f", releaseDate: "2023-01-01" },
+    ] as LlmModel[]
+
+    const sorted = sortModels(models)
+    expect(sorted.map((m) => m.name)).toEqual(["Has Date", "No Date"])
+  })
+
+  it("sorts no-date models by provider priority among themselves", () => {
+    const models = [
+      { id: "a", providerId: "openai", name: "GPT-X", family: "f" },
+      { id: "b", providerId: "anthropic", name: "Claude-X", family: "f" },
+    ] as LlmModel[]
+
+    const sorted = sortModels(models)
+    expect(sorted.map((m) => m.name)).toEqual(["Claude-X", "GPT-X"])
+  })
+})
+
+describe("filterAndPaginateLlms sorting", () => {
+  it("returns providers sorted by priority in response", () => {
+    const providers = createTestProviders()
+    const result = filterAndPaginateLlms(providers, {}, { page: 1, perPage: 10 })
+
+    // Providers: openai, anthropic, google in fixture
+    // Sorted: anthropic(0), google(1), openai(2)
+    expect(result.providers.map((p) => p.id)).toEqual([
+      "anthropic",
+      "google",
+      "openai",
+    ])
+  })
+
+  it("returns models sorted by release date with search filter", () => {
+    const providers = createTestProviders()
+    // Search "gpt" matches GPT-4 (2024-03) and GPT-3.5 Turbo (2023-06)
+    const result = filterAndPaginateLlms(
+      providers,
+      { search: "gpt" },
+      { page: 1, perPage: 10 }
+    )
+
+    expect(result.models).toHaveLength(2)
+    expect(result.models[0].name).toBe("GPT-4")
+    expect(result.models[1].name).toBe("GPT-3.5 Turbo")
   })
 })
 

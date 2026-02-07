@@ -45,6 +45,7 @@ interface ScoreDetailDialogProps {
   lgsBreakdown: LGSScoreBreakdown | null
   libraryMetadata: LibraryMeta | null
   llmMetadata: LLMMeta | null
+  libraryName?: string
   onClose: () => void
 }
 
@@ -83,18 +84,26 @@ function buildLCSComponents(
 
   const releaseDateFormatted = formatDate(releaseDate)
 
-  return [
+  const isPreCutoff = llmMeta?.knowledgeCutoff
+    ? releaseDate <= new Date(llmMeta.knowledgeCutoff).getTime()
+    : false
+
+  const stabilityDescription = isPreCutoff
+    ? "Released before knowledge cutoff — training data likely includes this library's release history"
+    : `${releasesPerYear} releases/year — ${
+        libraryScore.stability.value >= 0.7 ? "stable release cadence" :
+        libraryScore.stability.value >= 0.4 ? "moderate release frequency" :
+        "very frequent releases, higher volatility"
+      }`
+
+  const components: ScoreComponentData[] = [
     {
       id: "stability",
       label: "Stability",
       value: libraryScore.stability.value,
       weight: libraryScore.stability.weight,
       contribution: libraryScore.stability.contribution,
-      description: `${releasesPerYear} releases/year — ${
-        libraryScore.stability.value >= 0.7 ? "stable release cadence" :
-        libraryScore.stability.value >= 0.4 ? "moderate release frequency" :
-        "very frequent releases, higher volatility"
-      }`,
+      description: stabilityDescription,
     },
     {
       id: "simplicity",
@@ -145,13 +154,16 @@ function buildLCSComponents(
       }`,
     },
   ]
+
+  // Sort by weight descending, alphabetical label as tiebreaker
+  return components.sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label))
 }
 
 function buildLGSComponents(
   breakdown: LGSScoreBreakdown,
   llmMeta: LLMMeta | null
 ): ScoreComponentData[] {
-  return [
+  const components: ScoreComponentData[] = [
     {
       id: "capability",
       label: "Capability",
@@ -201,6 +213,9 @@ function buildLGSComponents(
       }`,
     },
   ]
+
+  // Sort by weight descending, alphabetical label as tiebreaker
+  return components.sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label))
 }
 
 export function ScoreDetailDialog({
@@ -209,6 +224,7 @@ export function ScoreDetailDialog({
   lgsBreakdown,
   libraryMetadata,
   llmMetadata,
+  libraryName,
   onClose,
 }: ScoreDetailDialogProps) {
   if (!version) return null
@@ -226,15 +242,15 @@ export function ScoreDetailDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
-          <ScrollArea.Root className="max-h-[85vh]">
-            <ScrollArea.Viewport className="h-full w-full rounded-xl">
+          <ScrollArea.Root className="max-h-[85vh] overflow-hidden">
+            <ScrollArea.Viewport className="max-h-[85vh] w-full rounded-xl">
               <div className="p-6 space-y-6">
 
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <Dialog.Title className="text-lg font-semibold font-mono text-card-foreground">
-                      v{version.version}
+                      {libraryName ? `${libraryName} ` : ""}v{version.version}
                     </Dialog.Title>
                     <Dialog.Description className="text-xs text-muted-foreground">
                       {RISK_LABELS[version.risk]} — {formatDate(version.releaseDate)}

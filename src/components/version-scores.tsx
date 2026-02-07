@@ -358,8 +358,13 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
                       return filtered.map((item) => (
                         <div
                           key={item.version}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setDialogVersion(item)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDialogVersion(item) } }}
                           className={cn(
-                            "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3",
+                            "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3 cursor-pointer",
+                            "hover:bg-muted/50 transition-colors",
                             "sm:flex-row sm:items-center sm:justify-between"
                           )}
                         >
@@ -368,16 +373,7 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
                               <span className="font-mono text-sm font-medium text-card-foreground">
                                 v{item.version}
                               </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setDialogVersion(item)
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <ScoreBadge score={item.score} risk={item.risk} />
-                              </button>
+                              <ScoreBadge score={item.score} risk={item.risk} />
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -410,6 +406,7 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
         lgsBreakdown={lgsBreakdown}
         libraryMetadata={libraryMeta}
         llmMetadata={llmMeta}
+        libraryName={libraryName}
         onClose={() => setDialogVersion(null)}
       />
     </div>

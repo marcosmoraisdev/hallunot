@@ -26,7 +26,7 @@ describe('RecencyRiskScore', () => {
 
   it('has correct id and weight', () => {
     expect(scorer.id).toBe('recency')
-    expect(scorer.weight).toBe(0.25)
+    expect(scorer.weight).toBe(0.40)
   })
 
   it('returns high score when version released well before cutoff (12 months)', () => {
