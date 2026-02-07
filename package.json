@@ -1,6 +1,10 @@
 {
   "name": "hallunot",
   "version": "1.0.0",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

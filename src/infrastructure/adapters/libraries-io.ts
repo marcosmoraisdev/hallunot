@@ -60,7 +60,6 @@ export interface SearchLibrariesParams {
 }
 
 import { logger } from "@/lib/logger"
-import { nameSimilarity } from "@/lib/string-similarity"
 
 const BASE_URL = "https://libraries.io/api"
 

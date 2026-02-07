@@ -17,10 +17,6 @@ export function ComponentScoreList({
   totalScore,
   renderVisualization,
 }: ComponentScoreListProps) {
-  const Visualization = renderVisualization
-    ? () => <>{renderVisualization({ components })}</>
-    : () => <ComponentBarChart components={components} />
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -31,7 +27,9 @@ export function ComponentScoreList({
           Score: {Math.round(totalScore * 100)}%
         </span>
       </div>
-      <Visualization />
+      {renderVisualization
+        ? renderVisualization({ components })
+        : <ComponentBarChart components={components} />}
     </div>
   )
 }

@@ -16,7 +16,6 @@ import type { RiskLevel } from "@/domain/models"
 
 interface VersionScoresProps {
   llmId: string
-  llmName: string
   libraryName: string
   platform: string
 }
@@ -164,7 +163,7 @@ function groupIntoBuckets(versions: DisplayVersion[]): VersionBucket[] {
   return buckets
 }
 
-export function VersionScores({ llmId, llmName, libraryName, platform }: VersionScoresProps) {
+export function VersionScores({ llmId, libraryName, platform }: VersionScoresProps) {
   const [buckets, setBuckets] = useState<VersionBucket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -183,17 +182,6 @@ export function VersionScores({ llmId, llmName, libraryName, platform }: Version
     const key = `${llmId}-${libraryName}-${platform}`
     if (lastFetchKey.current === key) return
     lastFetchKey.current = key
-
-    setLoading(true)
-    setError(null)
-    setBuckets([])
-    setExpandedBuckets(new Set())
-    setLibraryScore(null)
-    setLgsBreakdown(null)
-    setLibraryMeta(null)
-    setLlmMeta(null)
-    setDialogVersion(null)
-    setSearchQueries(new Map())
 
     const params = new URLSearchParams({
       llm: llmId,

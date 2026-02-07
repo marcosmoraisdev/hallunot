@@ -1,5 +1,5 @@
 // src/domain/services/final-score/index.ts
-import type { VersionScore, FinalVersionScore, FSOutput } from '../lcs/types'
+import type { VersionScore, FSOutput } from '../lcs/types'
 
 /**
  * Final Score = LCS × LGS

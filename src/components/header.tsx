@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { BookOpen, Lightbulb, Heart } from "lucide-react"
+import { Lightbulb, Heart } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { HowItWorksDialog } from "./how-it-works-dialog"
 

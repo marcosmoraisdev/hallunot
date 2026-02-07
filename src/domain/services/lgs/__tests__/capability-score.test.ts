@@ -24,9 +24,9 @@ function makeCtx(overrides: Partial<LGSContext['model']> = {}): LGSContext {
 describe('CapabilityScore', () => {
   const scorer = new CapabilityScore()
 
-  it('has id "capability" and weight 0.40', () => {
+  it('has id "capability" and weight 0.30', () => {
     expect(scorer.id).toBe('capability')
-    expect(scorer.weight).toBe(0.40)
+    expect(scorer.weight).toBe(0.30)
   })
 
   it('returns 0 when no capabilities are present', () => {

@@ -22,9 +22,9 @@ function makeCtx(overrides: Partial<LGSContext['model']> = {}): LGSContext {
 describe('RecencyScore', () => {
   const scorer = new RecencyScore()
 
-  it('has id "recency" and weight 0.30', () => {
+  it('has id "recency" and weight 0.40', () => {
     expect(scorer.id).toBe('recency')
-    expect(scorer.weight).toBe(0.30)
+    expect(scorer.weight).toBe(0.40)
   })
 
   it('returns 0.3 when both dates are missing', () => {

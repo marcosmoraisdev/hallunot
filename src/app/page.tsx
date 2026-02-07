@@ -221,7 +221,6 @@ export default function Home() {
               />
               <VersionScores
                 llmId={selectedLlm.id}
-                llmName={selectedLlm.name}
                 libraryName={selectedLibrary.name}
                 platform={selectedLibrary.platform || "NPM"}
               />
