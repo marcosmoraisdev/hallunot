@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Analytics } from "@vercel/analytics/react"
 import { Inter, Outfit } from "next/font/google"
 import { Geist_Mono } from "next/font/google"
 import "./globals.css"
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${inter.variable} ${outfit.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   )
