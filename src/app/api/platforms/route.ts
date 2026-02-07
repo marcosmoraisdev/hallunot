@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import { fetchPlatforms } from "@/infrastructure/adapters/libraries-io"
+import { logger } from "@/lib/logger"
 
 export async function GET() {
+  const log = logger.child({ route: "/api/platforms" })
+
   try {
     const platforms = await fetchPlatforms()
 
@@ -14,7 +17,7 @@ export async function GET() {
 
     return NextResponse.json({ data })
   } catch (error) {
-    console.error("Failed to fetch platforms:", error)
+    log.error({ err: error }, "Failed to fetch platforms")
     return NextResponse.json(
       { error: "Failed to fetch platforms" },
       { status: 500 }

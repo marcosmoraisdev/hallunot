@@ -2,29 +2,21 @@
 import { NextResponse } from "next/server"
 import { fetchAllProviders } from "@/infrastructure/adapters/models-dev"
 import { filterAndPaginateLlms } from "@/domain/services/llm-service"
+import { llmsSchema, parseSearchParams } from "@/lib/validation"
 import { logger } from "@/lib/logger"
-
-const DEFAULT_PAGE = 1
-const DEFAULT_PER_PAGE = 20
-const MAX_PER_PAGE = 100
 
 export async function GET(request: Request) {
   const log = logger.child({ route: "/api/llms" })
-  log.info("incoming request")
 
   try {
     const { searchParams } = new URL(request.url)
+    const parsed = parseSearchParams(llmsSchema, searchParams)
 
-    // Parse query parameters
-    const provider = searchParams.get("provider") ?? undefined
-    const search = searchParams.get("q") ?? undefined
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? String(DEFAULT_PAGE), 10))
-    const perPage = Math.min(
-      MAX_PER_PAGE,
-      Math.max(1, parseInt(searchParams.get("per_page") ?? String(DEFAULT_PER_PAGE), 10))
-    )
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
+    }
 
-    log.info({ provider, search, page, perPage }, "parsed query params")
+    const { provider, q: search, page, per_page: perPage } = parsed.data
 
     // Fetch all providers from external API
     const providers = await fetchAllProviders()

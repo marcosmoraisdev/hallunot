@@ -186,12 +186,12 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                     <div className="space-y-2">
                       <ComponentRow
                         name="Capability"
-                        weight={40}
+                        weight={30}
                         description="Feature breadth measured across 6 signals: reasoning/chain-of-thought, tool calling, structured output, file attachments, multimodal input, and multimodal output. Each signal adds 1/6 to the score — more capable models can better understand and generate code."
                       />
                       <ComponentRow
                         name="Model Recency"
-                        weight={30}
+                        weight={40}
                         description="How fresh the model's training data is, based on knowledge cutoff date (70% weight) and last update date (30% weight). More recent models have seen more recent library versions and coding patterns."
                       />
                       <ComponentRow

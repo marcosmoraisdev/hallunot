@@ -9,33 +9,22 @@ import { calculateFinalScores } from "@/domain/services/final-score"
 import { mapToLibraryMetadata, mapToVersionMetadata } from "@/infrastructure/mappers/library-metadata-mapper"
 import { logger } from "@/lib/logger"
 import { knowledgeCutoffToMs } from "@/lib/date"
+import { scoreSchema, parseSearchParams } from "@/lib/validation"
 import type { ScoreResponse, VersionScore, LCSOutput, LibraryMetadataResponse, LLMMetadataResponse } from "@/domain/services/lcs/types"
 
 export async function GET(request: Request) {
   const reqStart = Date.now()
-  const { searchParams } = new URL(request.url)
 
-  const modelId = searchParams.get("llm")?.trim()
-  const libraryName = searchParams.get("library")?.trim()
-  const platform = searchParams.get("platform")?.trim() || "NPM"
+  const { searchParams } = new URL(request.url)
+  const parsed = parseSearchParams(scoreSchema, searchParams)
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
+  }
+
+  const { llm: modelId, library: libraryName, platform } = parsed.data
 
   const log = logger.child({ route: "/api/score", llm: modelId, library: libraryName, platform })
-
-  log.info("incoming request")
-
-  if (!modelId) {
-    return NextResponse.json(
-      { error: "llm query parameter is required" },
-      { status: 400 }
-    )
-  }
-
-  if (!libraryName) {
-    return NextResponse.json(
-      { error: "library query parameter is required" },
-      { status: 400 }
-    )
-  }
 
   try {
     // Fetch all providers from models.dev API

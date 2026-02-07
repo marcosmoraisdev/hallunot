@@ -13,7 +13,7 @@ const DEFAULT_SCORE = 0.3
  */
 export class RecencyScore implements LGSScoreComponent {
   readonly id = 'recency'
-  readonly weight = 0.30
+  readonly weight = 0.40
 
   calculate(ctx: LGSContext): number {
     const { knowledgeCutoff, lastUpdated } = ctx.model

@@ -9,7 +9,7 @@ import type { LGSContext, LGSScoreComponent } from '../types'
  */
 export class CapabilityScore implements LGSScoreComponent {
   readonly id = 'capability'
-  readonly weight = 0.40
+  readonly weight = 0.30
 
   calculate(ctx: LGSContext): number {
     const { model } = ctx

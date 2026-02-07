@@ -1,7 +1,13 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Coins, Unplug, Target } from "lucide-react"
+
+const valueProps = [
+  { icon: Coins, label: "Fewer tokens" },
+  { icon: Unplug, label: "No extra tooling" },
+  { icon: Target, label: "Better accuracy out of the box" },
+]
 
 export function Hero() {
   return (
@@ -23,7 +29,7 @@ export function Hero() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="mt-6 max-w-2xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
       >
-        Stop hallucinating APIs.
+        Stop hallucinating!
         <br />
         <span className="text-risk-low">Use the right versions.</span>
       </motion.h1>
@@ -32,11 +38,30 @@ export function Hero() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base"
+        className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base"
       >
-        Check which library versions were released before your LLM&apos;s
-        knowledge cutoff date to maximize code generation accuracy.
+        No RAG pipelines. No MCP servers. No web search plugins.
+        <br />
+        Just the right library versions — ones your LLM was actually trained
+        on.
       </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="mt-6 flex flex-wrap items-center justify-center gap-3"
+      >
+        {valueProps.map(({ icon: Icon, label }) => (
+          <span
+            key={label}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground"
+          >
+            <Icon className="h-3.5 w-3.5 text-risk-low" />
+            {label}
+          </span>
+        ))}
+      </motion.div>
     </div>
   )
 }
