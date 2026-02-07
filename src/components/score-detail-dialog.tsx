@@ -297,7 +297,7 @@ export function ScoreDetailDialog({
                   </div>
                   <div className="flex items-center gap-3">
                     <ScoreBadge score={version.score} risk={version.risk} />
-                    <Dialog.Close className="rounded-md p-1 text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors">
+                    <Dialog.Close className="rounded-md p-1 text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors cursor-pointer">
                       <X className="h-4 w-4" />
                     </Dialog.Close>
                   </div>

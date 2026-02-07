@@ -1,7 +1,7 @@
 // src/components/version-scores.tsx
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Calendar, FileCode2, ChevronDown, ChevronRight, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/cn"
@@ -97,6 +97,21 @@ interface ScoreAPIResponse {
   }
 }
 
+// Enriched data consolidated into a single state object
+interface EnrichedData {
+  libraryScore: LibraryScoreBreakdown | null
+  lgsBreakdown: LGSScoreBreakdown | null
+  libraryMeta: ScoreAPIResponse["libraryMetadata"] | null
+  llmMeta: ScoreAPIResponse["llmMetadata"] | null
+}
+
+const EMPTY_ENRICHED: EnrichedData = {
+  libraryScore: null,
+  lgsBreakdown: null,
+  libraryMeta: null,
+  llmMeta: null,
+}
+
 function parseMajorVersion(version: string): number {
   const match = version.match(/^(\d+)/)
   return match ? parseInt(match[1], 10) : 0
@@ -163,6 +178,104 @@ function groupIntoBuckets(versions: DisplayVersion[]): VersionBucket[] {
   return buckets
 }
 
+// --- Extracted sub-components (not exported) ---
+
+interface VersionCardProps {
+  version: DisplayVersion
+  onSelect: (v: DisplayVersion) => void
+}
+
+const VersionCard = React.memo(function VersionCard({ version: item, onSelect }: VersionCardProps) {
+  const handleClick = useCallback(() => onSelect(item), [onSelect, item])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault()
+        onSelect(item)
+      }
+    },
+    [onSelect, item]
+  )
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3 cursor-pointer",
+        "hover:bg-muted/50 transition-colors",
+        "sm:flex-row sm:items-center sm:justify-between"
+      )}
+    >
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm font-medium text-card-foreground">
+            v{item.version}
+          </span>
+          <ScoreBadge score={item.score} risk={item.risk} />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {RISK_LABELS[item.risk]}
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            {formatDate(item.releaseDate)}
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <TrendingUp className="h-3 w-3" />
+            Recency: {Math.round(item.recencyContribution * 100)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+interface BucketContentProps {
+  bucket: VersionBucket
+  searchQuery: string
+  onUpdateSearch: (major: number, query: string) => void
+  onSelectVersion: (v: DisplayVersion) => void
+}
+
+function BucketContent({ bucket, searchQuery, onUpdateSearch, onSelectVersion }: BucketContentProps) {
+  const filteredVersions = useMemo(() => {
+    if (!searchQuery) return bucket.versions
+    return bucket.versions.filter((v) => v.version.includes(searchQuery))
+  }, [bucket.versions, searchQuery])
+
+  const handleSearchChange = useCallback(
+    (q: string) => onUpdateSearch(bucket.major, q),
+    [onUpdateSearch, bucket.major]
+  )
+
+  return (
+    <div className="p-2 space-y-2">
+      {bucket.versions.length > 10 && (
+        <VersionSearchBar
+          value={searchQuery}
+          onChange={handleSearchChange}
+          totalCount={bucket.versions.length}
+          filteredCount={filteredVersions.length}
+        />
+      )}
+
+      {filteredVersions.map((item) => (
+        <VersionCard
+          key={item.version}
+          version={item}
+          onSelect={onSelectVersion}
+        />
+      ))}
+    </div>
+  )
+}
+
+// --- Main component ---
+
 export function VersionScores({ llmId, libraryName, platform }: VersionScoresProps) {
   const [buckets, setBuckets] = useState<VersionBucket[]>([])
   const [loading, setLoading] = useState(true)
@@ -170,13 +283,12 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
   const [expandedBuckets, setExpandedBuckets] = useState<Set<number>>(new Set())
   const lastFetchKey = useRef("")
 
-  // Enriched data for detail dialog
-  const [libraryScore, setLibraryScore] = useState<LibraryScoreBreakdown | null>(null)
-  const [lgsBreakdown, setLgsBreakdown] = useState<LGSScoreBreakdown | null>(null)
-  const [libraryMeta, setLibraryMeta] = useState<ScoreAPIResponse["libraryMetadata"] | null>(null)
-  const [llmMeta, setLlmMeta] = useState<ScoreAPIResponse["llmMetadata"] | null>(null)
+  // Enriched data for detail dialog (single state to avoid multiple re-render cycles)
+  const [enrichedData, setEnrichedData] = useState<EnrichedData>(EMPTY_ENRICHED)
   const [dialogVersion, setDialogVersion] = useState<DisplayVersion | null>(null)
   const [searchQueries, setSearchQueries] = useState<Map<number, string>>(new Map())
+
+  const { libraryScore, lgsBreakdown, libraryMeta, llmMeta } = enrichedData
 
   useEffect(() => {
     const key = `${llmId}-${libraryName}-${platform}`
@@ -214,11 +326,13 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
 
         setBuckets(groupedBuckets)
 
-        // Store enriched data for the detail dialog
-        setLibraryScore(json.LCS?.libraryScore as unknown as LibraryScoreBreakdown ?? null)
-        setLgsBreakdown(json.LGS?.breakdown ?? null)
-        setLibraryMeta(json.libraryMetadata ?? null)
-        setLlmMeta(json.llmMetadata ?? null)
+        // Store enriched data in a single state update
+        setEnrichedData({
+          libraryScore: json.LCS?.libraryScore as unknown as LibraryScoreBreakdown ?? null,
+          lgsBreakdown: json.LGS?.breakdown ?? null,
+          libraryMeta: json.libraryMetadata ?? null,
+          llmMeta: json.llmMetadata ?? null,
+        })
       })
       .catch((err) => {
         if (lastFetchKey.current !== key) return
@@ -231,7 +345,7 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
       })
   }, [llmId, libraryName, platform])
 
-  const toggleBucket = (major: number) => {
+  const toggleBucket = useCallback((major: number) => {
     setExpandedBuckets((prev) => {
       const next = new Set(prev)
       if (next.has(major)) {
@@ -241,9 +355,9 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
       }
       return next
     })
-  }
+  }, [])
 
-  const updateSearch = (major: number, query: string) => {
+  const updateSearch = useCallback((major: number, query: string) => {
     setSearchQueries((prev) => {
       const next = new Map(prev)
       if (query) {
@@ -253,7 +367,15 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
       }
       return next
     })
-  }
+  }, [])
+
+  const handleSelectVersion = useCallback((v: DisplayVersion) => {
+    setDialogVersion(v)
+  }, [])
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogVersion(null)
+  }, [])
 
   if (loading) {
     return (
@@ -333,65 +455,12 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
                   transition={{ duration: 0.2 }}
                   className="border-t border-border/50"
                 >
-                  <div className="p-2 space-y-2">
-                    {/* Search bar for large buckets */}
-                    {bucket.versions.length > 10 && (
-                      <VersionSearchBar
-                        value={searchQueries.get(bucket.major) ?? ""}
-                        onChange={(q) => updateSearch(bucket.major, q)}
-                        totalCount={bucket.versions.length}
-                        filteredCount={
-                          bucket.versions.filter((v) =>
-                            v.version.includes(searchQueries.get(bucket.major) ?? "")
-                          ).length
-                        }
-                      />
-                    )}
-
-                    {/* Version list (filtered) */}
-                    {(() => {
-                      const query = searchQueries.get(bucket.major) ?? ""
-                      const filtered = query
-                        ? bucket.versions.filter((v) => v.version.includes(query))
-                        : bucket.versions
-                      return filtered.map((item) => (
-                        <div
-                          key={item.version}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setDialogVersion(item)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDialogVersion(item) } }}
-                          className={cn(
-                            "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3 cursor-pointer",
-                            "hover:bg-muted/50 transition-colors",
-                            "sm:flex-row sm:items-center sm:justify-between"
-                          )}
-                        >
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono text-sm font-medium text-card-foreground">
-                                v{item.version}
-                              </span>
-                              <ScoreBadge score={item.score} risk={item.risk} />
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                                {RISK_LABELS[item.risk]}
-                              </span>
-                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                <Calendar className="h-3 w-3" />
-                                {formatDate(item.releaseDate)}
-                              </span>
-                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                <TrendingUp className="h-3 w-3" />
-                                Recency: {Math.round(item.recencyContribution * 100)}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    })()}
-                  </div>
+                  <BucketContent
+                    bucket={bucket}
+                    searchQuery={searchQueries.get(bucket.major) ?? ""}
+                    onUpdateSearch={updateSearch}
+                    onSelectVersion={handleSelectVersion}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -406,7 +475,7 @@ export function VersionScores({ llmId, libraryName, platform }: VersionScoresPro
         libraryMetadata={libraryMeta}
         llmMetadata={llmMeta}
         libraryName={libraryName}
-        onClose={() => setDialogVersion(null)}
+        onClose={handleCloseDialog}
       />
     </div>
   )

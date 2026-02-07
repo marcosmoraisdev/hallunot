@@ -1,3 +1,4 @@
+import React from "react"
 import { CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/cn"
 import type { RiskLevel } from "@/domain/models"
@@ -28,7 +29,7 @@ const riskConfig: Record<
   },
 }
 
-export function ScoreBadge({ score, risk }: ScoreBadgeProps) {
+export const ScoreBadge = React.memo(function ScoreBadge({ score, risk }: ScoreBadgeProps) {
   const config = riskConfig[risk]
   const Icon = config.icon
 
@@ -45,4 +46,4 @@ export function ScoreBadge({ score, risk }: ScoreBadgeProps) {
       {score}% Match
     </span>
   )
-}
+})
