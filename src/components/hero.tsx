@@ -40,10 +40,9 @@ export function Hero() {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base"
       >
-        No RAG pipelines. No MCP servers. No web search plugins.
+        No documentation context servers. No search plugins. No extra setup.
         <br />
-        Just the right library versions — ones your LLM was actually trained
-        on.
+        Just versions most likely in your LLM&apos;s training data.
       </motion.p>
 
       <motion.div
