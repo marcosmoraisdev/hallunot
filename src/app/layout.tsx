@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Inter, Outfit } from "next/font/google"
 import { Geist_Mono } from "next/font/google"
-import { ThemeProvider } from "next-themes"
 import "./globals.css"
 
 const inter = Inter({
@@ -31,18 +30,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${outfit.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   )

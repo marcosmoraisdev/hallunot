@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Lightbulb, Heart } from "lucide-react"
-import { ThemeToggle } from "./theme-toggle"
+import { Lightbulb, Heart, Github } from "lucide-react"
 import { HowItWorksDialog } from "./how-it-works-dialog"
 
 export function Header() {
@@ -18,10 +17,6 @@ export function Header() {
         </div>
         <div className="flex items-center gap-1">
           <nav className="hidden items-center gap-1 sm:flex">
-            {/* <button className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
-              <BookOpen className="h-3.5 w-3.5" />
-              Documentation
-            </button> */}
             <button
               onClick={() => setHowItWorksOpen(true)}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -29,6 +24,15 @@ export function Header() {
               <Lightbulb className="h-3.5 w-3.5" />
               How it works
             </button>
+            <a
+              href="https://github.com/marcosmoraisdev/hallunot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <Github className="h-3.5 w-3.5" />
+              Code
+            </a>
             <a
               href={process.env.NEXT_PUBLIC_STRIPE_DONATE_URL}
               target="_blank"
@@ -39,7 +43,6 @@ export function Header() {
               Donate
             </a>
           </nav>
-          <ThemeToggle />
         </div>
       </div>
       <HowItWorksDialog open={howItWorksOpen} onOpenChange={setHowItWorksOpen} />
