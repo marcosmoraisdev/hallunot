@@ -22,10 +22,20 @@ const sectionVariants = {
   exit: { opacity: 0, y: -12 },
 }
 
+function scrollToRef(ref: React.RefObject<HTMLElement | null>) {
+  setTimeout(() => {
+    ref.current?.scrollIntoView({ behavior: "smooth" })
+  }, 150)
+}
+
 export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+
+  const resultsRef = useRef<HTMLElement>(null)
+  const llmRef = useRef<HTMLElement>(null)
+  const versionRef = useRef<HTMLElement>(null)
 
   const [providers, setProviders] = useState<LlmProviderResponse[]>([])
   const [providersLoading, setProvidersLoading] = useState(true)
@@ -84,6 +94,7 @@ export default function Home() {
         } else {
           setNoMoreMessage("")
         }
+        if (page === 1) scrollToRef(resultsRef)
       } catch {
         setSearchResults([])
         setHasMoreLibraries(false)
@@ -98,10 +109,12 @@ export default function Home() {
   const handleSelectLibrary = useCallback((libraryName: string, platform: string) => {
     setSelectedLibrary({ name: libraryName, platform })
     setSelectedLlm(null) // Reset LLM when library changes
+    scrollToRef(llmRef)
   }, [])
 
   const handleSelectLlm = useCallback((llmId: string, llmName: string) => {
     setSelectedLlm({ id: llmId, name: llmName })
+    scrollToRef(versionRef)
   }, [])
 
   const handleLibraryPageChange = useCallback((newPage: number) => {
@@ -142,7 +155,9 @@ export default function Home() {
         <AnimatePresence>
           {hasSearched && (
             <motion.section
+              ref={resultsRef}
               key="results-section"
+              className="scroll-mt-20"
               initial="hidden"
               animate="visible"
               exit="exit"
@@ -180,7 +195,9 @@ export default function Home() {
         <AnimatePresence>
           {selectedLibrary && (
             <motion.section
+              ref={llmRef}
               key="llm-section"
+              className="scroll-mt-20"
               initial="hidden"
               animate="visible"
               exit="exit"
@@ -207,7 +224,9 @@ export default function Home() {
         <AnimatePresence>
           {selectedLibrary && selectedLlm && (
             <motion.section
+              ref={versionRef}
               key="version-section"
+              className="scroll-mt-20"
               initial="hidden"
               animate="visible"
               exit="exit"
