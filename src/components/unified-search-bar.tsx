@@ -32,6 +32,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
   const [query, setQuery] = useState("")
   const [platformFilter, setPlatformFilter] = useState("")
   const filterInteracting = useRef(false)
+  const filterInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleFilterFocus = () => {
     filterInteracting.current = true
@@ -123,10 +124,22 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
             side="bottom"
             sideOffset={8}
             avoidCollisions
+            onPointerDownOutside={(event) => {
+              if (filterInteracting.current) {
+                event.preventDefault()
+              }
+            }}
+            onCloseAutoFocus={(event: Event) => {
+              if (filterInteracting.current) {
+                event.preventDefault()
+                filterInputRef.current?.focus()
+              }
+            }}
           >
             {/* Filter input */}
             <div className="shrink-0 border-b border-border/50 p-2">
               <input
+                ref={filterInputRef}
                 type="text"
                 value={platformFilter}
                 onChange={(e) => setPlatformFilter(e.target.value)}

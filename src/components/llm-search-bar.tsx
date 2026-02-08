@@ -23,6 +23,7 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
   const [query, setQuery] = useState("")
   const [providerFilter, setProviderFilter] = useState("")
   const filterInteracting = useRef(false)
+  const filterInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleFilterFocus = () => {
     filterInteracting.current = true
@@ -119,10 +120,22 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
             side="bottom"
             sideOffset={8}
             avoidCollisions
+            onPointerDownOutside={(event) => {
+              if (filterInteracting.current) {
+                event.preventDefault()
+              }
+            }}
+            onCloseAutoFocus={(event: Event) => {
+              if (filterInteracting.current) {
+                event.preventDefault()
+                filterInputRef.current?.focus()
+              }
+            }}
           >
             {/* Filter input */}
             <div className="shrink-0 border-b border-border/50 p-2">
               <input
+                ref={filterInputRef}
                 type="text"
                 value={providerFilter}
                 onChange={(e) => setProviderFilter(e.target.value)}
