@@ -132,12 +132,12 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                   {/* 1. The Flow */}
                   <AccordionItem icon={Workflow} title="The Flow" defaultOpen>
                     <div className="flex items-center justify-center gap-2 flex-wrap">
-                      <FlowStep label="Select an LLM" />
                       <FlowStep label="Search a library" />
+                      <FlowStep label="Select an LLM" />
                       <FlowStep label="View version scores" isLast />
                     </div>
                     <p className="text-[12px] leading-relaxed text-muted-foreground text-center">
-                      Scores indicate how likely the LLM&apos;s training data covers that library version — helping you avoid hallucinations without RAG or web search.
+                      Scores indicate how likely the LLM&apos;s training data covers that library version — helping you avoid hallucinations without context servers or web search.
                     </p>
                     <p className="text-[12px] leading-relaxed text-muted-foreground">
                       Important note! Models without a known knowledge cutoff date are excluded since they cannot be scored.

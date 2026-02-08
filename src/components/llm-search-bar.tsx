@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as Select from "@radix-ui/react-select"
 import { Bot, Search, ChevronDown, Check, Loader2 } from "lucide-react"
 import { cn } from "@/lib/cn"
@@ -19,12 +19,15 @@ interface LlmSearchBarProps {
 
 export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, providers, providersLoading }: LlmSearchBarProps) {
   const [selectedProvider, setSelectedProvider] = useState(ALL_PROVIDERS_VALUE)
+  const [selectOpen, setSelectOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [providerFilter, setProviderFilter] = useState("")
+  const filterInteracting = useRef(false)
 
-  const filteredProviders = providers.filter((p) =>
-    p.name.toLowerCase().includes(providerFilter.toLowerCase())
-  )
+  const matchesProviderFilter = (name: string) =>
+    !providerFilter || name.toLowerCase().includes(providerFilter.toLowerCase())
+
+  const hasFilterResults = providers.some((p) => matchesProviderFilter(p.name))
 
   // Auto-search effect with debounce
   useEffect(() => {
@@ -63,9 +66,15 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
     >
       {/* Provider Dropdown */}
       <Select.Root
+        open={selectOpen}
         value={selectedProvider}
         onValueChange={setSelectedProvider}
         onOpenChange={(open) => {
+          if (!open && filterInteracting.current) {
+            filterInteracting.current = false
+            return
+          }
+          setSelectOpen(open)
           if (!open) setProviderFilter("")
         }}
         disabled={disabled}
@@ -115,7 +124,11 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
                   "text-sm text-foreground placeholder:text-muted-foreground",
                   "outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 )}
-                onPointerDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => {
+                  e.stopPropagation()
+                  filterInteracting.current = true
+                  setTimeout(() => { filterInteracting.current = false }, 0)
+                }}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
               />
@@ -128,7 +141,8 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
                   "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
                   "text-foreground transition-colors",
                   "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
-                  "data-[state=checked]:text-primary"
+                  "data-[state=checked]:text-primary",
+                  !matchesProviderFilter("All Providers") && "hidden"
                 )}
               >
                 <Select.ItemIndicator className="absolute left-1 flex items-center">
@@ -139,34 +153,34 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
                 </div>
               </Select.Item>
 
-              {filteredProviders.length === 0 ? (
+              {!hasFilterResults && (
                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                   No providers found
                 </div>
-              ) : (
-                filteredProviders.map((provider) => (
-                  <Select.Item
-                    key={provider.id}
-                    value={provider.id}
-                    className={cn(
-                      "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
-                      "text-foreground transition-colors",
-                      "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
-                      "data-[state=checked]:text-primary"
-                    )}
-                  >
-                    <Select.ItemIndicator className="absolute left-1 flex items-center">
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    </Select.ItemIndicator>
-                    <div className="flex items-center gap-2 pl-4">
-                      <Select.ItemText>{provider.name}</Select.ItemText>
-                      <span className="text-[10px] text-muted-foreground">
-                        {provider.modelCount} models
-                      </span>
-                    </div>
-                  </Select.Item>
-                ))
               )}
+              {providers.map((provider) => (
+                <Select.Item
+                  key={provider.id}
+                  value={provider.id}
+                  className={cn(
+                    "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
+                    "text-foreground transition-colors",
+                    "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
+                    "data-[state=checked]:text-primary",
+                    !matchesProviderFilter(provider.name) && "hidden"
+                  )}
+                >
+                  <Select.ItemIndicator className="absolute left-1 flex items-center">
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  </Select.ItemIndicator>
+                  <div className="flex items-center gap-2 pl-4">
+                    <Select.ItemText>{provider.name}</Select.ItemText>
+                    <span className="text-[10px] text-muted-foreground">
+                      {provider.modelCount} models
+                    </span>
+                  </div>
+                </Select.Item>
+              ))}
             </Select.Viewport>
           </Select.Content>
         </Select.Portal>

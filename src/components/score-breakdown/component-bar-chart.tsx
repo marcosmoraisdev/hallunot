@@ -23,12 +23,13 @@ function MobileTooltip({ content }: { content: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <Tooltip.Root open={open} onOpenChange={setOpen}>
+    <Tooltip.Root open={open}>
       <Tooltip.Trigger asChild>
         <button
           type="button"
           className="inline-flex text-muted-foreground hover:text-card-foreground transition-colors cursor-pointer"
           onClick={() => setOpen((v) => !v)}
+          onPointerDown={(e) => e.preventDefault()}
         >
           <Info className="h-3 w-3" />
         </button>

@@ -1,7 +1,7 @@
 // src/components/unified-search-bar.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as Select from "@radix-ui/react-select"
 import { Layers, Search, ChevronDown, Check, Loader2 } from "lucide-react"
 import { cn } from "@/lib/cn"
@@ -28,12 +28,15 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
   const [platformsLoading, setPlatformsLoading] = useState(true)
 
   const [selectedPlatform, setSelectedPlatform] = useState("")
+  const [selectOpen, setSelectOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [platformFilter, setPlatformFilter] = useState("")
+  const filterInteracting = useRef(false)
 
-  const filteredPlatforms = platforms.filter((p) =>
-    p.name.toLowerCase().includes(platformFilter.toLowerCase())
-  )
+  const matchesPlatformFilter = (name: string) =>
+    !platformFilter || name.toLowerCase().includes(platformFilter.toLowerCase())
+
+  const hasFilterResults = platforms.some((p) => matchesPlatformFilter(p.name))
 
   useEffect(() => {
     fetch("/api/platforms")
@@ -68,9 +71,15 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
     >
       {/* Platform Dropdown */}
       <Select.Root
+        open={selectOpen}
         value={selectedPlatform}
         onValueChange={setSelectedPlatform}
         onOpenChange={(open) => {
+          if (!open && filterInteracting.current) {
+            filterInteracting.current = false
+            return
+          }
+          setSelectOpen(open)
           if (!open) setPlatformFilter("")
         }}
       >
@@ -119,40 +128,44 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
                   "text-sm text-foreground placeholder:text-muted-foreground",
                   "outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 )}
-                onPointerDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => {
+                  e.stopPropagation()
+                  filterInteracting.current = true
+                  setTimeout(() => { filterInteracting.current = false }, 0)
+                }}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
             <Select.Viewport className="min-h-[120px] max-h-[240px] flex-1 overflow-auto p-1">
-              {filteredPlatforms.length === 0 ? (
+              {!hasFilterResults && (
                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                   No platforms found
                 </div>
-              ) : (
-                filteredPlatforms.map((platform) => (
-                  <Select.Item
-                    key={platform.name}
-                    value={platform.name}
-                    className={cn(
-                      "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
-                      "text-foreground transition-colors",
-                      "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
-                      "data-[state=checked]:text-primary"
-                    )}
-                  >
-                    <Select.ItemIndicator className="absolute left-1 flex items-center">
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    </Select.ItemIndicator>
-                    <div className="flex items-center gap-2 pl-4">
-                      <Select.ItemText>{platform.name}</Select.ItemText>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatProjectCount(platform.projectCount)} projects
-                      </span>
-                    </div>
-                  </Select.Item>
-                ))
               )}
+              {platforms.map((platform) => (
+                <Select.Item
+                  key={platform.name}
+                  value={platform.name}
+                  className={cn(
+                    "relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none",
+                    "text-foreground transition-colors",
+                    "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
+                    "data-[state=checked]:text-primary",
+                    !matchesPlatformFilter(platform.name) && "hidden"
+                  )}
+                >
+                  <Select.ItemIndicator className="absolute left-1 flex items-center">
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  </Select.ItemIndicator>
+                  <div className="flex items-center gap-2 pl-4">
+                    <Select.ItemText>{platform.name}</Select.ItemText>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatProjectCount(platform.projectCount)} projects
+                    </span>
+                  </div>
+                </Select.Item>
+              ))}
             </Select.Viewport>
           </Select.Content>
         </Select.Portal>
