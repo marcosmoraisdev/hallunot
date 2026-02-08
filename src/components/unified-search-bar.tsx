@@ -119,6 +119,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
                   "text-sm text-foreground placeholder:text-muted-foreground",
                   "outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 )}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
               />
