@@ -1,6 +1,7 @@
 // src/components/score-breakdown/component-bar-chart.tsx
 "use client"
 
+import { useState } from "react"
 import * as Tooltip from "@radix-ui/react-tooltip"
 import { Info } from "lucide-react"
 import { cn } from "@/lib/cn"
@@ -18,6 +19,39 @@ function getBarBgColor(value: number): string {
   return "bg-risk-high-bg"
 }
 
+function MobileTooltip({ content }: { content: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Tooltip.Root open={open} onOpenChange={setOpen}>
+      <Tooltip.Trigger asChild>
+        <button
+          type="button"
+          className="inline-flex text-muted-foreground hover:text-card-foreground transition-colors cursor-pointer"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <Info className="h-3 w-3" />
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          side="top"
+          align="start"
+          sideOffset={6}
+          onPointerDownOutside={() => setOpen(false)}
+          className={cn(
+            "z-[100] rounded-lg border border-border bg-card px-3 py-2 shadow-lg",
+            "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+          )}
+        >
+          {content}
+          <Tooltip.Arrow className="fill-border" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  )
+}
+
 export function ComponentBarChart({ components }: ScoreVisualizationProps) {
   return (
     <Tooltip.Provider delayDuration={200}>
@@ -28,27 +62,7 @@ export function ComponentBarChart({ components }: ScoreVisualizationProps) {
               <span className="flex items-center gap-1 font-medium text-card-foreground">
                 {component.label}
                 {component.tooltip && (
-                  <Tooltip.Root>
-                    <Tooltip.Trigger asChild>
-                      <button type="button" className="inline-flex text-muted-foreground hover:text-card-foreground transition-colors cursor-pointer">
-                        <Info className="h-3 w-3" />
-                      </button>
-                    </Tooltip.Trigger>
-                    <Tooltip.Portal>
-                      <Tooltip.Content
-                        side="top"
-                        align="start"
-                        sideOffset={6}
-                        className={cn(
-                          "z-[100] rounded-lg border border-border bg-card px-3 py-2 shadow-lg",
-                          "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
-                        )}
-                      >
-                        {component.tooltip}
-                        <Tooltip.Arrow className="fill-border" />
-                      </Tooltip.Content>
-                    </Tooltip.Portal>
-                  </Tooltip.Root>
+                  <MobileTooltip content={component.tooltip} />
                 )}
               </span>
               <span className="tabular-nums text-muted-foreground">
