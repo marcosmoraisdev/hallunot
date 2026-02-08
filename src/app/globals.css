@@ -86,6 +86,7 @@
 body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
+  overflow-x: hidden;
 }
 
 * {

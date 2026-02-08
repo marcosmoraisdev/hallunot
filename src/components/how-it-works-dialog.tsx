@@ -106,10 +106,10 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-card shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
           <ScrollArea.Root className="max-h-[85vh] overflow-hidden">
             <ScrollArea.Viewport className="max-h-[85vh] w-full rounded-xl">
-              <div className="p-6 space-y-4">
+              <div className="space-y-4 p-4 sm:p-6">
 
                 {/* Header */}
                 <div className="flex items-start justify-between">
@@ -212,7 +212,7 @@ export function HowItWorksDialog({ open, onOpenChange }: HowItWorksDialogProps) 
                     <p className="text-[12px] leading-relaxed text-muted-foreground">
                       The final score combines both indices through multiplication. Both need to be strong for a high result — a great library version scored on a weak model (or vice versa) will still yield a moderate score.
                     </p>
-                    <div className="flex items-center justify-center gap-3 py-3 px-3 rounded-lg border border-border/50 bg-background">
+                    <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg border border-border/50 bg-background px-3 py-3">
                       <div className="flex flex-col items-center gap-1 rounded-lg border border-border/50 px-4 py-2 bg-muted/30">
                         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">LCS</span>
                         <span className="text-sm font-bold tabular-nums text-card-foreground">0–100</span>

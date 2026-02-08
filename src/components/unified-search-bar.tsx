@@ -62,7 +62,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
   return (
     <div
       className={cn(
-        "flex w-full items-center rounded-xl border border-border/50 bg-card",
+        "flex w-full items-center overflow-hidden rounded-xl border border-border/50 bg-card",
         "transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
       )}
     >
@@ -97,7 +97,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
         <Select.Portal>
           <Select.Content
             className={cn(
-              "z-50 flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-lg",
+              "z-50 flex w-[--radix-select-trigger-width] flex-col overflow-hidden rounded-xl border border-border/50 bg-card shadow-lg sm:w-auto sm:min-w-[200px]",
               "max-h-[--radix-select-content-available-height]",
               "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
               "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
@@ -158,7 +158,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
       </Select.Root>
 
       {/* Search Input + Button */}
-      <div className="flex flex-1 items-center gap-2 px-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 px-3">
         <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
           type="text"
@@ -167,7 +167,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
           onKeyDown={handleKeyDown}
           placeholder="Search libraries..."
           className={cn(
-            "h-10 flex-1 bg-transparent text-sm text-foreground",
+            "h-10 min-w-0 flex-1 bg-transparent text-sm text-foreground",
             "placeholder:text-muted-foreground",
             "outline-none"
           )}
@@ -177,7 +177,7 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
           onClick={handleSearch}
           disabled={isSearchDisabled}
           className={cn(
-            "shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground cursor-pointer",
+            "shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground cursor-pointer sm:px-4",
             "transition-colors hover:bg-primary/90",
             "disabled:cursor-not-allowed disabled:opacity-50"
           )}
