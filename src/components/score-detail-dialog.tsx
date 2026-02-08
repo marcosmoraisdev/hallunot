@@ -286,20 +286,20 @@ export function ScoreDetailDialog({
               <div className="space-y-6 p-4 sm:p-6">
 
                 {/* Header */}
-                <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <ScoreBadge score={version.score} risk={version.risk} />
+                    <Dialog.Close className="rounded-md p-1 text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors cursor-pointer">
+                      <X className="h-4 w-4" />
+                    </Dialog.Close>
+                  </div>
                   <div className="space-y-1">
-                    <Dialog.Title className="text-lg font-semibold font-mono text-card-foreground">
+                    <Dialog.Title className="break-words text-lg font-semibold font-mono text-card-foreground">
                       {libraryName ? `${libraryName} ` : ""}v{version.version}
                     </Dialog.Title>
                     <Dialog.Description className="text-xs text-muted-foreground">
                       {RISK_LABELS[version.risk]} — {formatDate(version.releaseDate)}
                     </Dialog.Description>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <ScoreBadge score={version.score} risk={version.risk} />
-                    <Dialog.Close className="rounded-md p-1 text-muted-foreground hover:text-card-foreground hover:bg-muted transition-colors cursor-pointer">
-                      <X className="h-4 w-4" />
-                    </Dialog.Close>
                   </div>
                 </div>
 

@@ -24,6 +24,14 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
   const [providerFilter, setProviderFilter] = useState("")
   const filterInteracting = useRef(false)
 
+  const handleFilterFocus = () => {
+    filterInteracting.current = true
+  }
+
+  const handleFilterBlur = () => {
+    filterInteracting.current = false
+  }
+
   const matchesProviderFilter = (name: string) =>
     !providerFilter || name.toLowerCase().includes(providerFilter.toLowerCase())
 
@@ -124,10 +132,15 @@ export function LlmSearchBar({ onSearch, disabled = false, autoSearch = true, pr
                   "text-sm text-foreground placeholder:text-muted-foreground",
                   "outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 )}
+                onFocus={handleFilterFocus}
+                onBlur={handleFilterBlur}
                 onPointerDown={(e) => {
                   e.stopPropagation()
-                  filterInteracting.current = true
-                  setTimeout(() => { filterInteracting.current = false }, 0)
+                  handleFilterFocus()
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation()
+                  handleFilterFocus()
                 }}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}

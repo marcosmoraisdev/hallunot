@@ -33,6 +33,14 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
   const [platformFilter, setPlatformFilter] = useState("")
   const filterInteracting = useRef(false)
 
+  const handleFilterFocus = () => {
+    filterInteracting.current = true
+  }
+
+  const handleFilterBlur = () => {
+    filterInteracting.current = false
+  }
+
   const matchesPlatformFilter = (name: string) =>
     !platformFilter || name.toLowerCase().includes(platformFilter.toLowerCase())
 
@@ -128,10 +136,15 @@ export function UnifiedSearchBar({ onSearch }: UnifiedSearchBarProps) {
                   "text-sm text-foreground placeholder:text-muted-foreground",
                   "outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 )}
+                onFocus={handleFilterFocus}
+                onBlur={handleFilterBlur}
                 onPointerDown={(e) => {
                   e.stopPropagation()
-                  filterInteracting.current = true
-                  setTimeout(() => { filterInteracting.current = false }, 0)
+                  handleFilterFocus()
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation()
+                  handleFilterFocus()
                 }}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}

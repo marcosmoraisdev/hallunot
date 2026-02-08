@@ -204,31 +204,26 @@ const VersionCard = React.memo(function VersionCard({ version: item, onSelect }:
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "flex flex-col gap-2 rounded-lg border border-border/30 bg-background p-3 cursor-pointer",
-        "hover:bg-muted/50 transition-colors",
-        "sm:flex-row sm:items-center sm:justify-between"
+        "grid grid-cols-[1fr_auto] items-start gap-x-3 gap-y-1 rounded-lg border border-border/30 bg-background p-3 cursor-pointer",
+        "hover:bg-muted/50 transition-colors"
       )}
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-sm font-medium text-card-foreground">
-            v{item.version}
-          </span>
-          <ScoreBadge score={item.score} risk={item.risk} />
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {RISK_LABELS[item.risk]}
-          </span>
-          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            {formatDate(item.releaseDate)}
-          </span>
-          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <TrendingUp className="h-3 w-3" />
-            Recency: {Math.round(item.recencyContribution * 100)}%
-          </span>
-        </div>
+      <span className="font-mono text-sm font-medium text-card-foreground">
+        v{item.version}
+      </span>
+      <ScoreBadge score={item.score} risk={item.risk} />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {RISK_LABELS[item.risk]}
+        </span>
+        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Calendar className="h-3 w-3" />
+          {formatDate(item.releaseDate)}
+        </span>
+        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <TrendingUp className="h-3 w-3" />
+          Recency: {Math.round(item.recencyContribution * 100)}%
+        </span>
       </div>
     </div>
   )
